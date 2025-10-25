@@ -111,9 +111,9 @@ class PreciseAttentionTracker:
             (150.0, -150.0, -125.0)
         ])
         
-        print(f"✅ Precise Attention Tracker initialized: {self.frame_width}x{self.frame_height}")
-        print("📱 MediaPipe + Precise EAR/MAR Math + Phone Detection")
-        print("🎯 Exact Eye Aspect Ratio and Mouth Aspect Ratio Calculations")
+        print(f"Precise Attention Tracker initialized: {self.frame_width}x{self.frame_height}")
+        print("MediaPipe + Precise EAR/MAR Math + Phone Detection")
+        print("Exact Eye Aspect Ratio and Mouth Aspect Ratio Calculations")
 
     def initialize_camera(self) -> bool:
         """Initialize camera capture"""
@@ -695,9 +695,9 @@ class PreciseAttentionTracker:
 
     def run(self):
         """Run the main attention tracking loop"""
-        print("🚀 Starting Precise Attention Tracker...")
-        print("📱 MediaPipe + Precise EAR/MAR Math + Phone Detection")
-        print("🎯 Exact Eye Aspect Ratio and Mouth Aspect Ratio Calculations")
+        print("Starting Precise Attention Tracker...")
+        print("MediaPipe + Precise EAR/MAR Math + Phone Detection")
+        print("Exact Eye Aspect Ratio and Mouth Aspect Ratio Calculations")
         print("Press 'q' to quit, 's' to save screenshot")
         
         while True:
@@ -705,6 +705,9 @@ class PreciseAttentionTracker:
             if not ret:
                 print("Failed to grab frame")
                 break
+            
+            # Flip frame horizontally for mirror effect
+            frame = cv2.flip(frame, 1)
             
             # Process frame
             metrics = self.process_frame(frame)
@@ -757,7 +760,7 @@ class PreciseAttentionTracker:
         
         self.cap.release()
         cv2.destroyAllWindows()
-        print("✅ Precise Attention Tracker stopped")
+        print("Precise Attention Tracker stopped")
 
 def main():
     tracker = PreciseAttentionTracker(
