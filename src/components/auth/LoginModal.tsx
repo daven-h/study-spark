@@ -11,7 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signInWithGoogle, signInWithEmail } from '@/lib/supabase/auth';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '@/lib/supabase/auth';
+import { useAppStore } from '@/store/app-store';
 
 interface LoginModalProps {
   open: boolean;
@@ -23,13 +24,16 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
+  
+  const signInGoogle = useAppStore(s => s.signInGoogle);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleAuth = async () => {
     try {
       setLoading(true);
       setError(null);
-      await signInWithGoogle();
-      // Modal will close automatically after redirect
+      await signInGoogle();
+      onOpenChange(false); // Close modal
     } catch (err) {
       setError('Failed to sign in with Google. Please try again.');
       console.error(err);
@@ -38,7 +42,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     }
   };
 
-  const handleEmailLogin = async () => {
+  const handleEmailAuth = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -48,12 +52,17 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
         return;
       }
 
-      await signInWithEmail(email, password);
-      onOpenChange(false); // Close modal on success
-      setEmail('');
-      setPassword('');
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
+        setError('Check your email for a confirmation link!');
+      } else {
+        await signInWithEmail(email, password);
+        onOpenChange(false); // Close modal on success
+        setEmail('');
+        setPassword('');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -64,9 +73,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle>Sign in to Study Spark</DialogTitle>
+          <DialogTitle>{isSignUp ? 'Sign up for Study Spark' : 'Sign in to Study Spark'}</DialogTitle>
           <DialogDescription>
-            Sign in to sync your tasks and sessions across devices
+            {isSignUp ? 'Create an account to sync your tasks and sessions across devices' : 'Sign in to sync your tasks and sessions across devices'}
           </DialogDescription>
         </DialogHeader>
 
@@ -80,7 +89,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
           {/* Google Sign In Button */}
           <Button
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleAuth}
             variant="outline"
             className="w-full"
             disabled={loading}
@@ -103,7 +112,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                 fill="#EA4335"
               />
             </svg>
-            {loading ? 'Signing in...' : 'Continue with Google'}
+            {loading ? 'Signing in...' : `Continue with Google${isSignUp ? ' (Sign Up)' : ''}`}
           </Button>
 
           <div className="relative">
@@ -141,31 +150,33 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                 disabled={loading}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    handleEmailLogin();
+                    handleEmailAuth();
                   }
                 }}
               />
             </div>
             <Button 
-              onClick={handleEmailLogin} 
+              onClick={handleEmailAuth} 
               className="w-full"
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (isSignUp ? 'Creating account...' : 'Signing in...') : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
           </div>
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button 
             className="underline hover:text-primary"
             onClick={() => {
-              onOpenChange(false);
-              // TODO: Open register modal
+              setIsSignUp(!isSignUp);
+              setError(null);
+              setEmail('');
+              setPassword('');
             }}
           >
-            Sign up
+            {isSignUp ? 'Sign in' : 'Sign up'}
           </button>
         </div>
       </DialogContent>

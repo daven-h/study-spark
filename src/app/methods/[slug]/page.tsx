@@ -10,13 +10,14 @@ const methodTitles: { [key: string]: string } = {
 };
 
 interface MethodPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function MethodPage({ params }: MethodPageProps) {
-  const title = methodTitles[params.slug] || "Study Method";
+export default async function MethodPage({ params }: MethodPageProps) {
+  const { slug } = await params;
+  const title = methodTitles[slug] || "Study Method";
 
   return (
     <main className="px-6 py-8">
