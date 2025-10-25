@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/davenhill/dev/study-spark/src/app/layout.tsx"],"sourcesContent":["import type { Metadata } from \"next\";\nimport \"@/styles/globals.css\";\nimport { AuthProvider } from \"@/components/auth/AuthProvider\";\n\nexport const metadata: Metadata = {\n  title: \"Study Spark\",\n  description: \"Focus better with Pomodoro + attention tracking\",\n};\n\nexport default function RootLayout({\n  children,\n}: Readonly<{\n  children: React.ReactNode;\n}>) {\n  return (\n    <html lang=\"en\">\n      <body>\n        <AuthProvider>\n          {children}\n        </AuthProvider>\n      </body>\n    </html>\n  );\n}"],"names":[],"mappings":";;;;;;;;;;;;;;;AAIO,MAAM,WAAqB;IAChC,OAAO;IACP,aAAa;AACf;AAEe,SAAS,WAAW,EACjC,QAAQ,EAGR;IACA,qBACE,uQAAC;QAAK,MAAK;kBACT,cAAA,uQAAC;sBACC,cAAA,uQAAC;0BACE;;;;;;;;;;;;;;;;AAKX","debugId":null}},
-    {"offset": {"line": 49, "column": 0}, "map": {"version":3,"sources":["file:///Users/davenhill/dev/study-spark/node_modules/next/src/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.ts"],"sourcesContent":["module.exports = (\n  require('../../module.compiled') as typeof import('../../module.compiled')\n).vendored['react-rsc']!.ReactJsxDevRuntime\n"],"names":["module","exports","require","vendored","ReactJsxDevRuntime"],"mappings":"AAAAA,OAAOC,OAAO,GACZC,QAAQ,4IACRC,QAAQ,CAAC,YAAY,CAAEC,kBAAkB","ignoreList":[0],"debugId":null}}]
-}

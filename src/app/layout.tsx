@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import "@/styles/globals.css";
+import "@/app/globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import NavBar from "@/components/NavBar";
 
 export const metadata: Metadata = {
   title: "Study Spark",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
+          <NavBar />
           {children}
         </AuthProvider>
       </body>

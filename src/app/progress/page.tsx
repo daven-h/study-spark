@@ -1,0 +1,152 @@
+'use client';
+
+import Link from 'next/link';
+import { useAppStore } from '@/store/app-store';
+import { StatsCard } from '@/components/ui/StatsCard';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { formatSecondsToHms, formatDate } from '@/lib/time';
+import { useEffect, useState } from 'react';
+
+export default function ProgressPage() {
+  const { user, sessions, computeStats } = useAppStore();
+  const [stats, setStats] = useState(computeStats());
+  const [todayProgress, setTodayProgress] = useState(0);
+
+  // Update stats when sessions change
+  useEffect(() => {
+    setStats(computeStats());
+    
+    // Calculate today's progress (default goal: 2 hours = 7200 seconds)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    const todayEnd = todayStart + 24 * 60 * 60 * 1000;
+    
+    const todaySessions = sessions.filter(s => 
+      s.endedAt && 
+      s.startedAt >= todayStart && 
+      s.startedAt < todayEnd
+    );
+    
+    const todaySeconds = todaySessions.reduce((sum, s) => sum + (s.durationSec || 0), 0);
+    const goalSeconds = 2 * 60 * 60; // 2 hours
+    const progress = Math.min(100, (todaySeconds / goalSeconds) * 100);
+    
+    setTodayProgress(progress);
+  }, [sessions, computeStats]);
+
+  const recentSessions = sessions
+    .filter(s => s.endedAt && s.durationSec)
+    .sort((a, b) => b.startedAt - a.startedAt)
+    .slice(0, 5);
+
+  return (
+    <main className="container mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-modular text-[#3f403f] mb-8 text-center">
+          Your Progress
+        </h1>
+
+        {/* Welcome message */}
+        {user && (
+          <div className="text-center mb-8">
+            <p className="text-lg font-norwester text-[#575b44]">
+              Welcome back, {user.name}!
+            </p>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <StatsCard
+            title="Total Sessions"
+            value={stats.totalSessions}
+            subtitle="completed"
+          />
+          <StatsCard
+            title="Study Time"
+            value={formatSecondsToHms(stats.totalSeconds)}
+            subtitle="total"
+          />
+          <StatsCard
+            title="Current Streak"
+            value={stats.currentStreak}
+            subtitle="days"
+          />
+        </div>
+
+        {/* Study Goals */}
+        <div className="bg-[#fffbef] border border-[rgba(63,64,63,0.08)] rounded-2xl p-6 mb-8">
+          <h2 className="text-2xl font-modular text-[#3f403f] mb-4">Daily Study Goal</h2>
+          <p className="text-[#575b44] font-norwester mb-4">
+            Goal: 2 hours per day
+          </p>
+          <ProgressBar 
+            progress={todayProgress} 
+            showPercentage={true}
+            className="mb-2"
+          />
+          <p className="text-sm font-norwester text-[#575b44]">
+            {todayProgress >= 100 ? "Goal achieved! 🎉" : "Keep going!"}
+          </p>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-[#fffbef] border border-[rgba(63,64,63,0.08)] rounded-2xl p-6">
+          <h2 className="text-2xl font-modular text-[#3f403f] mb-6">Recent Activity</h2>
+          
+          {recentSessions.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📚</div>
+              <h3 className="text-xl font-norwester text-[#3f403f] mb-4">
+                No study sessions yet
+              </h3>
+              <p className="text-[#575b44] font-norwester mb-6">
+                Start your first study session to see your progress here.
+              </p>
+              <Link
+                href="/methods"
+                className="inline-block rounded-2xl bg-[#939f5c] text-[#3f403f] px-6 py-3 text-lg font-bold tracking-wide shadow-sm hover:bg-[#808b4f] transition font-modular uppercase"
+              >
+                Start Studying
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentSessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between p-4 bg-white rounded-xl border border-[rgba(63,64,63,0.08)]"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-[#939f5c] rounded-full flex items-center justify-center">
+                      <span className="text-[#3f403f] font-bold text-lg">
+                        {session.method.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-norwester text-[#3f403f] capitalize">
+                        {session.method.replace('-', ' ')}
+                      </h4>
+                      <p className="text-sm font-norwester text-[#575b44]">
+                        {formatDate(session.startedAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-modular text-[#939f5c] text-lg">
+                      {formatSecondsToHms(session.durationSec || 0)}
+                    </p>
+                    <p className="text-sm font-norwester text-[#575b44]">
+                      Duration
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
