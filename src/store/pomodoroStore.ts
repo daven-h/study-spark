@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { PomodoroState, TimerPhase, TimerStatus } from '@/types/pomodoro';
 import { useSettingsStore } from './settingsStore';
+import { useSessionStore } from './sessionStore';
 
 interface PomodoroStore extends PomodoroState {
   // Actions
@@ -107,6 +108,20 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
 
     if (state.phase === 'work') {
       // Work completed
+
+      const sessionStore = useSessionStore.getState();
+
+      sessionStore.addSession({
+        taskId: state.currentTaskId,
+        date: new Date().toISOString().split('T')[0],
+        workMinutes: settings.workMin,
+        breakMinutes: 0,
+        attentionTimeline: sessionStore.currentAttentionTimeline,
+      });
+
+      sessionStore.clearCurrentTimeline();
+
+
       newCyclesCompleted += 1;
       
       // Long break after cyclesToLong cycles, otherwise short break
