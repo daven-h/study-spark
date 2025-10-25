@@ -2,11 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState, User, Session, Stats, MethodSlug } from '@/types';
 import { isSameDay, getStartOfDay } from '@/lib/time';
+import { signInWithGoogle, signOut as supabaseSignOut, getCurrentUser } from '@/lib/supabase/auth';
 
 interface AppStore extends AppState {
   // Actions
   signInGoogle: () => Promise<User>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
+  syncUserFromSupabase: () => Promise<void>;
   addSession: (session: Session) => void;
   endSession: (sessionId: string, endedAt: number) => void;
   setLastMethod: (method: MethodSlug) => void;
@@ -24,20 +26,47 @@ export const useAppStore = create<AppStore>()(
 
       // Actions
       signInGoogle: async () => {
-        // For now, create a local fake user
-        // TODO: Integrate with Supabase when env vars are present
-        const user: User = {
-          id: 'local-uid',
-          name: 'You',
-          avatarUrl: undefined
-        };
-        
-        set({ user });
-        return user;
+        try {
+          // Check if we have Supabase env vars
+          if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            // Use real Google auth
+            await signInWithGoogle();
+            // The user will be redirected to auth callback, then back to the app
+            // The auth state will be handled by the auth provider
+            return {
+              id: 'pending',
+              email: 'pending',
+              name: 'pending'
+            };
+          } else {
+            // Fallback to local fake user for development
+            const user: User = {
+              id: 'local-uid',
+              email: 'you@example.com',
+              name: 'You',
+              avatarUrl: undefined
+            };
+            
+            set({ user });
+            return user;
+          }
+        } catch (error) {
+          console.error('Google sign in error:', error);
+          throw error;
+        }
       },
 
-      signOut: () => {
-        set({ user: null });
+      signOut: async () => {
+        try {
+          if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            await supabaseSignOut();
+          }
+          set({ user: null });
+        } catch (error) {
+          console.error('Sign out error:', error);
+          // Still clear local state even if Supabase sign out fails
+          set({ user: null });
+        }
       },
 
       addSession: (session: Session) => {
@@ -69,6 +98,27 @@ export const useAppStore = create<AppStore>()(
         set({ user });
       },
 
+      syncUserFromSupabase: async () => {
+        try {
+          if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            const supabaseUser = await getCurrentUser();
+            if (supabaseUser) {
+              const user: User = {
+                id: supabaseUser.id,
+                email: supabaseUser.email,
+                name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name,
+                avatarUrl: supabaseUser.user_metadata?.avatar_url
+              };
+              set({ user });
+            } else {
+              set({ user: null });
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing user from Supabase:', error);
+        }
+      },
+
       computeStats: () => {
         const { sessions } = get();
         
@@ -81,9 +131,9 @@ export const useAppStore = create<AppStore>()(
         }
 
         // Calculate total sessions and time
-        const completedSessions = sessions.filter(s => s.endedAt && s.durationSec);
+        const completedSessions = sessions.filter(s => s.completed);
         const totalSessions = completedSessions.length;
-        const totalSeconds = completedSessions.reduce((sum, s) => sum + (s.durationSec || 0), 0);
+        const totalSeconds = completedSessions.reduce((sum, s) => sum + (s.minutes * 60), 0);
 
         // Calculate current streak
         const now = Date.now();
@@ -94,7 +144,7 @@ export const useAppStore = create<AppStore>()(
         const studyDays = Array.from(
           new Set(
             completedSessions
-              .map(s => getStartOfDay(s.startedAt))
+              .map(s => getStartOfDay(new Date(s.dateISO).getTime()))
               .sort((a, b) => b - a)
           )
         );

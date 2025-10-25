@@ -16,12 +16,6 @@ const methods: Method[] = [
     icon: '🍅'
   },
   {
-    slug: 'flowtime',
-    title: 'Flowtime',
-    description: 'Work until energy dips, then rest. No fixed timer.',
-    icon: '🌊'
-  },
-  {
     slug: '52-17',
     title: '52 / 17',
     description: '52 min work, 17 min break.',
@@ -32,12 +26,6 @@ const methods: Method[] = [
     title: 'Deep Work (90 / 20)',
     description: '90 min deep focus, 20 min rest.',
     icon: '🧠'
-  },
-  {
-    slug: 'blurting-sprint',
-    title: 'Blurting Sprint',
-    description: 'Short recall bursts, then review.',
-    icon: '⚡'
   },
   {
     slug: 'phone-free-sprint',

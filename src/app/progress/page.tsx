@@ -6,6 +6,7 @@ import { StatsCard } from '@/components/ui/StatsCard';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { formatSecondsToHms, formatDate } from '@/lib/time';
 import { useEffect, useState } from 'react';
+import AddSessionSheet from '@/components/AddSessionSheet';
 
 export default function ProgressPage() {
   const { user, sessions, computeStats } = useAppStore();
@@ -17,18 +18,13 @@ export default function ProgressPage() {
     setStats(computeStats());
     
     // Calculate today's progress (default goal: 2 hours = 7200 seconds)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStart = today.getTime();
-    const todayEnd = todayStart + 24 * 60 * 60 * 1000;
+    const today = new Date().toISOString().slice(0, 10);
     
     const todaySessions = sessions.filter(s => 
-      s.endedAt && 
-      s.startedAt >= todayStart && 
-      s.startedAt < todayEnd
+      s.completed && s.dateISO === today
     );
     
-    const todaySeconds = todaySessions.reduce((sum, s) => sum + (s.durationSec || 0), 0);
+    const todaySeconds = todaySessions.reduce((sum, s) => sum + (s.minutes * 60), 0);
     const goalSeconds = 2 * 60 * 60; // 2 hours
     const progress = Math.min(100, (todaySeconds / goalSeconds) * 100);
     
@@ -36,16 +32,19 @@ export default function ProgressPage() {
   }, [sessions, computeStats]);
 
   const recentSessions = sessions
-    .filter(s => s.endedAt && s.durationSec)
-    .sort((a, b) => b.startedAt - a.startedAt)
+    .filter(s => s.completed)
+    .sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
     .slice(0, 5);
 
   return (
     <main className="container mx-auto px-6 py-12">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-modular text-[#3f403f] mb-8 text-center">
-          Your Progress
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-modular text-[#3f403f]">
+            Your Progress
+          </h1>
+          <AddSessionSheet />
+        </div>
 
         {/* Welcome message */}
         {user && (
@@ -125,17 +124,17 @@ export default function ProgressPage() {
                       </span>
                     </div>
                     <div>
-                      <h4 className="font-norwester text-[#3f403f] capitalize">
-                        {session.method.replace('-', ' ')}
+                      <h4 className="font-norwester text-[#3f403f]">
+                        {session.title}
                       </h4>
-                      <p className="text-sm font-norwester text-[#575b44]">
-                        {formatDate(session.startedAt)}
+                      <p className="text-sm font-norwester text-[#575b44] capitalize">
+                        {session.method.replace('-', ' ')} • {formatDate(new Date(session.dateISO).getTime())}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-modular text-[#939f5c] text-lg">
-                      {formatSecondsToHms(session.durationSec || 0)}
+                      {session.minutes}m
                     </p>
                     <p className="text-sm font-norwester text-[#575b44]">
                       Duration

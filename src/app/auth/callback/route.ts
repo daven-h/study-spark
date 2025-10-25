@@ -17,6 +17,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Redirect to home page after auth attempt
-  return NextResponse.redirect(new URL('/', requestUrl.origin));
+  // Redirect to progress page after auth attempt
+  return NextResponse.redirect(new URL('/progress', requestUrl.origin));
 }

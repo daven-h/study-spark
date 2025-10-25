@@ -1,24 +1,24 @@
 export type MethodSlug = 
   | "pomodoro" 
-  | "flowtime" 
   | "52-17" 
   | "deep-work-90-20" 
-  | "blurting-sprint" 
   | "phone-free-sprint";
 
 export interface User {
   id: string;
+  email?: string;
   name?: string;
   avatarUrl?: string;
 }
 
 export interface Session {
   id: string;
+  title: string;
   method: MethodSlug;
-  startedAt: number;
-  endedAt?: number;
-  durationSec?: number;
-  notes?: string;
+  completed: boolean;
+  minutes: number;           // whole minutes focused
+  dateISO: string;           // yyyy-mm-dd
+  createdAt: number;
 }
 
 export interface Stats {

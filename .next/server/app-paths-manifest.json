@@ -1,5 +1,10 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/auth/callback/route": "app/auth/callback/route.js",
+  "/faq/page": "app/faq/page.js",
+  "/guides/page": "app/guides/page.js",
+  "/methods/[slug]/page": "app/methods/[slug]/page.js",
+  "/methods/page": "app/methods/page.js",
   "/page": "app/page.js",
   "/progress/page": "app/progress/page.js"
 }

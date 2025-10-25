@@ -1,15 +1,18 @@
 import Image from 'next/image';
 import StarBorderButton from '@/components/StarBorderButton';
+import ShinyText from '@/components/ShinyText';
 
 export default function Home() {
   return (
     <main className="container mx-auto px-6 py-12">
       {/* Hero Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24 min-h-[600px]">
         {/* Left side - Text content */}
-        <div>
+        <div className="flex flex-col justify-center">
           <p className="text-sm font-norwester text-[#575b44] mb-2">Digital Study Tracker</p>
-          <h1 className="text-6xl font-bold mb-4 font-modular text-[#3f403f]">STUDY SPARK</h1>
+          <h1 className="text-6xl font-bold mb-4 font-modular text-[#3f403f]">
+            <ShinyText text="STUDY SPARK" speed={3} />
+          </h1>
           <p className="text-xl font-norwester text-[#939f5c] mb-8">
             Turn focus into a habit, one session at a time.
           </p>
@@ -25,8 +28,8 @@ export default function Home() {
         </div>
 
         {/* Right side - Brain mascot image */}
-        <div className="flex justify-center">
-          <div className="w-full max-w-md aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="flex justify-center items-center">
+          <div className="w-full max-w-md aspect-square bg-gray-100 rounded-lg flex items-center justify-center ml-4">
             <Image src='/brain-mascot.png' alt='Brain Mascot' width={500} height={500} priority />
           </div>
         </div>

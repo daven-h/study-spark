@@ -50,6 +50,9 @@ export default function NavBar() {
   const isMobile = useIsMobile()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const { user, signOut } = useAppStore()
+  
+  // Helper for avatar letter (handles null/undefined)
+  const avatarLetter = (user?.email ?? '?')[0]?.toUpperCase() ?? '?';
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-[#fffbef]/70 border-b border-[rgba(63,64,63,0.08)]">
@@ -88,22 +91,16 @@ export default function NavBar() {
                   Study Methods{" "}
                   <ChevronDown className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180" />
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="z-[60] mt-4">
+                <NavigationMenuContent className="z-[60] mt-8">
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                     <ListItem href="/methods/pomodoro" title="Pomodoro">
                       25 min focus, 5 min break. Longer break every 4 rounds.
-                    </ListItem>
-                    <ListItem href="/methods/flowtime" title="Flowtime">
-                      Work until energy dips, then rest. No fixed timer.
                     </ListItem>
                     <ListItem href="/methods/52-17" title="52 / 17">
                       52 min work, 17 min break.
                     </ListItem>
                     <ListItem href="/methods/deep-work-90-20" title="Deep Work (90 / 20)">
                       90 min deep focus, 20 min rest.
-                    </ListItem>
-                    <ListItem href="/methods/blurting-sprint" title="Blurting Sprint">
-                      Short recall bursts, then review.
                     </ListItem>
                     <ListItem href="/methods/phone-free-sprint" title="Phone-Free Sprint">
                       Lock your phone away and sprint.
@@ -122,7 +119,7 @@ export default function NavBar() {
                   Resources{" "}
                   <ChevronDown className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180" />
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="z-[60] mt-4">
+                <NavigationMenuContent className="z-[60] mt-8">
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                     <ListItem href="/faq" title="FAQ">
                       Find answers to common questions.
@@ -147,7 +144,7 @@ export default function NavBar() {
                   About Us{" "}
                   <ChevronDown className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180" />
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="z-[60] mt-4">
+                <NavigationMenuContent className="z-[60] mt-8">
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                     <ListItem href="/about#mission" title="Our Mission">
                       Learn about our goals and what drives us.
@@ -171,9 +168,14 @@ export default function NavBar() {
                 <NavigationMenuList>
                   <NavigationMenuItem>
                     <NavigationMenuTrigger className="font-norwester text-[#3f403f] hover:bg-[rgba(63,64,63,0.06)] rounded-xl px-4 py-2">
-                      <User className="h-4 w-4 mr-2" /> {user.name || "Profile"}
+                      <div className="flex items-center">
+                        <div className="w-6 h-6 bg-[#939f5c] rounded-full flex items-center justify-center mr-2">
+                          <span className="text-xs font-modular text-[#3f403f]">{avatarLetter}</span>
+                        </div>
+                        <span className="text-sm">{user.email || user.name || "Profile"}</span>
+                      </div>
                     </NavigationMenuTrigger>
-                    <NavigationMenuContent className="z-[60] mt-4">
+                    <NavigationMenuContent className="z-[60] mt-8">
                       <ul className="grid gap-3 p-4 w-[180px]">
                         <ListItem href="/progress" title="Progress">
                           Track your study journey.

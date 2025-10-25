@@ -2,10 +2,10 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/store/authStore';
+import { useAppStore } from '@/store/app-store';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser, setLoading } = useAuthStore();
+  const { setUser, syncUserFromSupabase } = useAppStore();
 
   useEffect(() => {
     let mounted = true;
@@ -17,11 +17,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error getting initial session:', error.message);
         setUser(null);
+      } else if (session?.user) {
+        // Convert Supabase user to our User type
+        const user = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+          avatarUrl: session.user.user_metadata?.avatar_url
+        };
+        setUser(user);
       } else {
-        setUser(session?.user ?? null);
+        setUser(null);
       }
-
-      setLoading(false);
     });
 
     // 2. Listen for auth changes (login, logout, token refresh)
@@ -29,7 +36,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Convert Supabase user to our User type
+        const user = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+          avatarUrl: session.user.user_metadata?.avatar_url
+        };
+        setUser(user);
+      } else {
+        setUser(null);
+      }
     });
 
     // cleanup on unmount
@@ -37,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setUser, setLoading]);
+  }, [setUser]);
 
   return <>{children}</>;
 }
