@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { LoginModal } from './LoginModal';
+import { LoginModal } from '@/components/auth/LoginModal';
 
 export function LoginButton() {
   const [showModal, setShowModal] = useState(false);
@@ -15,4 +15,6 @@ export function LoginButton() {
       <LoginModal open={showModal} onOpenChange={setShowModal} />
     </>
   );
+
+  
 }
