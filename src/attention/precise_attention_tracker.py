@@ -96,7 +96,7 @@ class PreciseAttentionTracker:
         self.eye_ar_threshold = 0.20
         self.mouth_ar_threshold = 0.88
         self.eye_ar_consec_frames = 3
-        self.head_tilt_threshold = 15.0
+        self.head_tilt_threshold = 180.0  # Balanced for normal use
         
         # Eye closure counter
         self.eye_closure_counter = 0
@@ -394,8 +394,8 @@ class PreciseAttentionTracker:
             yaw, pitch, roll = self.get_head_pose_from_mediapipe(frame, face_landmarks)
             head_tilt = abs(roll)
             
-            # Orientation analysis
-            orientation_good = (abs(yaw) < 15.0 and abs(pitch) < 15.0 and head_tilt < self.head_tilt_threshold)
+            # Orientation analysis - balanced thresholds for normal use
+            orientation_good = (abs(yaw) < 100.0 and abs(pitch) < 100.0 and head_tilt < self.head_tilt_threshold)
         
         # Hand detection
         hand_landmarks = []
@@ -422,10 +422,9 @@ class PreciseAttentionTracker:
         if face_bbox and phone_objects:
             phone_near_face, phone_confidence = self.is_phone_near_face(face_bbox, phone_objects)
         
-        # Enhanced phone detection
-        if hand_near_face and phone_objects:
-            phone_near_face = True
-            phone_confidence = max(phone_confidence, max(obj.get('confidence', 0.0) for obj in phone_objects))
+        # Phone detection is independent of hand detection
+        # Only set phone_near_face based on actual phone object overlap with face
+        # (The phone_near_face is already set correctly above by is_phone_near_face function)
         
         # Posture analysis
         posture_stable = True
@@ -710,9 +709,9 @@ class PreciseAttentionTracker:
             # Process frame
             metrics = self.process_frame(frame)
             
-            # Draw overlays
-            frame = self.draw_precise_status_overlay(frame, metrics)
-            frame = self.draw_phone_detections(frame, metrics.get("phone_objects", []))
+            # Draw overlays (hidden as per user request)
+            # frame = self.draw_precise_status_overlay(frame, metrics)
+            # frame = self.draw_phone_detections(frame, metrics.get("phone_objects", []))
             
             # Draw focus ring
             if metrics.get("focused", False):
