@@ -68,8 +68,8 @@ Once running on `http://localhost:8765`:
 ## Development
 
 The main tracking algorithm is in:
-- `src/attention/complete_algorithm_server.py` - HTTP server
-- `src/attention/precise_attention_tracker.py` - Core tracking algorithm
+- `src/attention/main_server.py` - HTTP server (LATEST)
+- `src/attention/advanced_attention_tracker.py` - Core tracking algorithm (LATEST)
 - `src/attention/flexible_phone_detector.py` - Phone detection
 
 ## Notes

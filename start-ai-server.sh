@@ -34,4 +34,4 @@ echo "   Press Ctrl+C to stop"
 echo ""
 
 cd src/attention
-python3 complete_algorithm_server.py
+python3 main_server.py
