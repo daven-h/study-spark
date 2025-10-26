@@ -1,0 +1,26 @@
+{
+  "pages": {
+    "/methods/page": [
+      "static/chunks/Desktop_knighthacks25_study-spark_src_app_globals_99feaab5.css",
+      "static/chunks/59869_@supabase_node-fetch_browser_ee65768f.js",
+      "static/chunks/Desktop_knighthacks25_study-spark_src_7a38486e._.js",
+      "static/chunks/59869_next_072440b1._.js",
+      "static/chunks/59869_@supabase_storage-js_dist_module_e62f4311._.js",
+      "static/chunks/59869_@supabase_auth-js_dist_module_0b904d08._.js",
+      "static/chunks/59869_tailwind-merge_dist_bundle-mjs_mjs_4994df82._.js",
+      "static/chunks/59869_29b7f091._.js",
+      "static/chunks/Desktop_knighthacks25_study-spark_src_app_layout_tsx_59599f42._.js",
+      "static/chunks/59869_next_dist_client_components_builtin_global-error_fa6bf38e.js",
+      "static/chunks/Desktop_knighthacks25_study-spark_src_app_methods_page_tsx_fa6bf38e._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_c78b4d8f._.js",
+      "static/chunks/59869_next_dist_compiled_react-dom_242fa09a._.js",
+      "static/chunks/59869_next_dist_compiled_next-devtools_index_97a0fa9d.js",
+      "static/chunks/59869_next_dist_compiled_67fc856a._.js",
+      "static/chunks/59869_next_dist_client_7920a387._.js",
+      "static/chunks/59869_next_dist_1c971238._.js",
+      "static/chunks/59869_@swc_helpers_cjs_827addd8._.js",
+      "static/chunks/Desktop_knighthacks25_study-spark_a0ff3932._.js",
+      "static/chunks/turbopack-Desktop_knighthacks25_study-spark_9870193f._.js"
+    ]
+  }
+}

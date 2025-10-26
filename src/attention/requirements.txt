@@ -1,0 +1,9 @@
+mediapipe
+opencv-python
+numpy
+websockets
+ultralytics
+torch
+torchvision
+flask
+flask-cors

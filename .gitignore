@@ -1,44 +1,70 @@
-
 # Dependencies
 node_modules/
-.pnp
-.pnp.js
+venv/
+env/
+.venv/
 
-# Testing
-coverage/
-*.log
-
-# Next.js
-.next/
-out/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Production
-*.tsbuildinfo
-next-env.d.ts
+# PyInstaller
+*.manifest
+*.spec
 
-# Misc
-.DS_Store
-*.pem
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
 
-# Local env files
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# Environments
 .env
-.env*.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # IDE
 .vscode/
@@ -49,5 +75,39 @@ yarn-error.log*
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# MediaPipe models (if downloaded)
+*.tflite
+*.pb
+
+# Attention tracker specific
+*.mp4
+*.avi
+*.mov
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# Temporary files
+*.tmp
+*.temp
