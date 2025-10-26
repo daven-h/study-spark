@@ -7,9 +7,10 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { formatSecondsToHms, formatDate } from '@/lib/time';
 import { useEffect, useState } from 'react';
 import AddSessionSheet from '@/components/AddSessionSheet';
+import { DailyGoalSheet } from '@/components/DailyGoalSheet';
 
 export default function ProgressPage() {
-  const { user, sessions, computeStats } = useAppStore();
+  const { user, sessions, computeStats, dailyGoalMinutes } = useAppStore();
   const [stats, setStats] = useState(computeStats());
   const [todayProgress, setTodayProgress] = useState(0);
 
@@ -25,16 +26,30 @@ export default function ProgressPage() {
     );
     
     const todaySeconds = todaySessions.reduce((sum, s) => sum + (s.minutes * 60), 0);
-    const goalSeconds = 2 * 60 * 60; // 2 hours
+    const goalSeconds = dailyGoalMinutes * 60; // Convert minutes to seconds
     const progress = Math.min(100, (todaySeconds / goalSeconds) * 100);
     
     setTodayProgress(progress);
-  }, [sessions, computeStats]);
+  }, [sessions, computeStats, dailyGoalMinutes]);
 
   const recentSessions = sessions
     .filter(s => s.completed)
     .sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
     .slice(0, 5);
+
+  const formatGoal = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} minutes`;
+    } else if (minutes === 60) {
+      return '1 hour';
+    } else if (minutes % 60 === 0) {
+      return `${minutes / 60} hours`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return `${hours}h ${remainingMinutes}m`;
+    }
+  };
 
   return (
     <main className="container mx-auto px-6 py-12">
@@ -76,9 +91,12 @@ export default function ProgressPage() {
 
         {/* Study Goals */}
         <div className="bg-[#fffbef] border border-[rgba(63,64,63,0.08)] rounded-2xl p-6 mb-8">
-          <h2 className="text-2xl font-modular text-[#3f403f] mb-4">Daily Study Goal</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-modular text-[#3f403f]">Daily Study Goal</h2>
+            <DailyGoalSheet currentGoal={dailyGoalMinutes} />
+          </div>
           <p className="text-[#575b44] font-norwester mb-4">
-            Goal: 2 hours per day
+            Goal: {formatGoal(dailyGoalMinutes)} per day
           </p>
           <ProgressBar 
             progress={todayProgress} 

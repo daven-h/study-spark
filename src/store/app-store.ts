@@ -14,6 +14,7 @@ interface AppStore extends AppState {
   setLastMethod: (method: MethodSlug) => void;
   computeStats: () => Stats;
   setUser: (user: User | null) => void;
+  setDailyGoal: (minutes: number) => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -23,6 +24,7 @@ export const useAppStore = create<AppStore>()(
       user: null,
       sessions: [],
       lastMethod: undefined,
+      dailyGoalMinutes: 120, // Default: 2 hours = 120 minutes
 
       // Actions
       signInGoogle: async () => {
@@ -96,6 +98,10 @@ export const useAppStore = create<AppStore>()(
 
       setUser: (user: User | null) => {
         set({ user });
+      },
+
+      setDailyGoal: (minutes: number) => {
+        set({ dailyGoalMinutes: minutes });
       },
 
       syncUserFromSupabase: async () => {
@@ -180,7 +186,8 @@ export const useAppStore = create<AppStore>()(
       partialize: (state) => ({
         user: state.user,
         sessions: state.sessions,
-        lastMethod: state.lastMethod
+        lastMethod: state.lastMethod,
+        dailyGoalMinutes: state.dailyGoalMinutes
       })
     }
   )

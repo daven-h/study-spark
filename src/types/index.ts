@@ -32,6 +32,7 @@ export interface AppState {
   user: User | null;
   sessions: Session[];
   lastMethod?: MethodSlug;
+  dailyGoalMinutes: number; // Daily study goal in minutes
 }
 
 export interface DataAdapter {
