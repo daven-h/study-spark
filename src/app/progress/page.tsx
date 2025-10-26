@@ -10,26 +10,34 @@ import AddSessionSheet from '@/components/AddSessionSheet';
 
 export default function ProgressPage() {
   const { user, sessions, computeStats } = useAppStore();
-  const [stats, setStats] = useState(computeStats());
+  const [stats, setStats] = useState({ totalSessions: 0, totalSeconds: 0, currentStreak: 0 });
   const [todayProgress, setTodayProgress] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  // Wait for client-side hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Update stats when sessions change
   useEffect(() => {
+    if (!mounted) return;
+
     setStats(computeStats());
-    
+
     // Calculate today's progress (default goal: 2 hours = 7200 seconds)
     const today = new Date().toISOString().slice(0, 10);
-    
-    const todaySessions = sessions.filter(s => 
+
+    const todaySessions = sessions.filter(s =>
       s.completed && s.dateISO === today
     );
-    
+
     const todaySeconds = todaySessions.reduce((sum, s) => sum + (s.minutes * 60), 0);
     const goalSeconds = 2 * 60 * 60; // 2 hours
     const progress = Math.min(100, (todaySeconds / goalSeconds) * 100);
-    
+
     setTodayProgress(progress);
-  }, [sessions, computeStats]);
+  }, [sessions, computeStats, mounted]);
 
   const recentSessions = sessions
     .filter(s => s.completed)
@@ -125,7 +133,7 @@ export default function ProgressPage() {
                     </div>
                     <div>
                       <h4 className="font-norwester text-[#3f403f]">
-                        {session.title}
+                        {session.task}
                       </h4>
                       <p className="text-sm font-norwester text-[#575b44] capitalize">
                         {session.method.replace('-', ' ')} • {formatDate(new Date(session.dateISO).getTime())}

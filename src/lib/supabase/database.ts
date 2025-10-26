@@ -1,49 +1,10 @@
 import { supabase } from './client';
-import { Task } from '@/types/task';
 import { Session } from '@/types/session';
 import { Settings } from '@/types/settings';
-
-export async function getTasks(userId: string) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
-}
-
-export async function upsertTask(task: Task, userId: string) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .upsert({
-      id: task.id,
-      user_id: userId,
-      title: task.title,
-      estimate_pomos: task.estimatePomos,
-      done: task.done,
-      created_at: task.createdAt,
-      updated_at: task.updatedAt,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteTask(taskId: string) {
-  const { error } = await supabase
-    .from('tasks')
-    .delete()
-    .eq('id', taskId);
-
-  if (error) throw error;
-}
+import { Session as AppSession } from '@/types';
 
 /**
- * Sessions
+ * Sessions (old pomodoro sessions - kept for backward compatibility)
  */
 export async function getSessions(userId: string) {
   const { data, error } = await supabase
@@ -69,6 +30,53 @@ export async function upsertSession(session: Session, userId: string) {
       attention_timeline: session.attentionTimeline,
       created_at: session.createdAt,
       updated_at: session.updatedAt,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Get AppSessions (from app-store) from Supabase
+ */
+export async function getAppSessions(userId: string) {
+  const { data, error } = await supabase
+    .from('app_sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Transform database format to app format
+  return data?.map(row => ({
+    id: row.id,
+    task: row.task,
+    method: row.method,
+    completed: row.completed,
+    minutes: row.minutes,
+    dateISO: row.date_iso,
+    createdAt: new Date(row.created_at).getTime(),
+  })) || [];
+}
+
+/**
+ * Upsert AppSession (from app-store) to Supabase
+ */
+export async function upsertAppSession(session: AppSession, userId: string) {
+  const { data, error } = await supabase
+    .from('app_sessions')
+    .upsert({
+      id: session.id,
+      user_id: userId,
+      task: session.task,
+      method: session.method,
+      completed: session.completed,
+      minutes: session.minutes,
+      date_iso: session.dateISO,
+      created_at: new Date(session.createdAt).toISOString(),
     })
     .select()
     .single();

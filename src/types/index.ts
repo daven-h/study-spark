@@ -13,7 +13,7 @@ export interface User {
 
 export interface Session {
   id: string;
-  title: string;
+  task: string;
   method: MethodSlug;
   completed: boolean;
   minutes: number;           // whole minutes focused
