@@ -1,12 +1,20 @@
 import './GradientText.css';
 
+interface GradientTextProps {
+  children: React.ReactNode;
+  className?: string;
+  colors?: string[];
+  animationSpeed?: number;
+  showBorder?: boolean;
+}
+
 export default function GradientText({
   children,
   className = '',
   colors = ['#3f403f', '#939f5c', '#575b44', '#939f5c'],
   animationSpeed = 3,
   showBorder = false
-}) {
+}: GradientTextProps) {
   const gradientStyle = {
     backgroundImage: `linear-gradient(to right, ${colors.join(', ')})`,
     animationDuration: `${animationSpeed}s`
