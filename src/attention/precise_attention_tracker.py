@@ -14,6 +14,8 @@ import threading
 from scipy.spatial import distance as dist
 
 from flexible_phone_detector import FlexiblePhoneDetector
+from ai_helper_vlm import AIHelperVLM
+from simulated_ai_helper import SimulatedAIHelper
 
 class FPSCounter:
     """Optimized FPS counter"""
@@ -79,6 +81,26 @@ class PreciseAttentionTracker:
         
         # Initialize flexible phone detector
         self.phone_detector = FlexiblePhoneDetector()
+        
+        # Initialize AI helper VLM (optional)
+        self.ai_helper = None
+        try:
+            self.ai_helper = AIHelperVLM(
+                model_name="llava:7b",
+                backend="ollama",
+                throttle_seconds=1.0
+            )
+            print("AI Helper VLM initialized")
+        except Exception as e:
+            print(f"AI Helper VLM not available: {e}")
+            # Fallback to simulated AI helper for testing
+            self.ai_helper = SimulatedAIHelper(detection_probability=0.3)
+            print("Using Simulated AI Helper for testing")
+        
+        # AI helper state
+        self.ai_popup_alpha = 0
+        self.ai_popup_timer = 0
+        self.ai_popup_message = ""
         
         # Performance optimization
         self.fps_counter = FPSCounter()
@@ -426,6 +448,55 @@ class PreciseAttentionTracker:
         # Only set phone_near_face based on actual phone object overlap with face
         # (The phone_near_face is already set correctly above by is_phone_near_face function)
         
+        # AI Helper VLM check (optional, non-interfering)
+        ai_detected_phone = False
+        ai_confidence = 0.0
+        ai_triggered = False
+        
+        if self.ai_helper and (self.frame_count % 25 == 0 or (0.3 <= phone_confidence <= 0.6)):
+            try:
+                # Get hand bounding boxes for AI helper
+                hand_bboxes = []
+                if hand_landmarks:
+                    for hand in hand_landmarks:
+                        # Calculate hand bounding box
+                        hand_x = [lm.x for lm in hand.landmark]
+                        hand_y = [lm.y for lm in hand.landmark]
+                        if hand_x and hand_y:
+                            h_x_min = int(min(hand_x) * self.frame_width)
+                            h_x_max = int(max(hand_x) * self.frame_width)
+                            h_y_min = int(min(hand_y) * self.frame_height)
+                            h_y_max = int(max(hand_y) * self.frame_height)
+                            hand_bboxes.append((h_x_min, h_y_min, h_x_max, h_y_max))
+                
+                # Get phone bounding boxes for AI helper
+                phone_bboxes = []
+                for phone_obj in phone_objects:
+                    if 'bbox' in phone_obj:
+                        phone_bboxes.append(phone_obj['bbox'])
+                
+                # Run AI helper
+                ai_result = self.ai_helper.check_phone_with_vlm(
+                    frame=frame,
+                    face_bbox=face_bbox,
+                    hand_bboxes=hand_bboxes,
+                    phone_bboxes=phone_bboxes,
+                    phone_confidence=phone_confidence
+                )
+                
+                ai_detected_phone = ai_result.get("ai_detected_phone", False)
+                ai_confidence = ai_result.get("ai_confidence", 0.0)
+                ai_triggered = ai_result.get("ai_triggered", False)
+                
+                # Update popup if AI detected phone
+                if ai_detected_phone and ai_triggered:
+                    self.ai_popup_alpha = 255
+                    self.ai_popup_timer = 60  # 2 seconds at 30 FPS
+                    self.ai_popup_message = "📱 You're on your phone"
+                
+            except Exception as e:
+                print(f"AI Helper error: {e}")
+        
         # Posture analysis
         posture_stable = True
         if pose_results.pose_landmarks:
@@ -492,7 +563,11 @@ class PreciseAttentionTracker:
             "posture_stable": posture_stable,
             "status_messages": status_messages,
             "phone_objects": phone_objects,
-            "fps": fps
+            "fps": fps,
+            # AI Helper results (non-interfering)
+            "ai_detected_phone": ai_detected_phone,
+            "ai_confidence": ai_confidence,
+            "ai_triggered": ai_triggered
         }
 
     def generate_status_messages(self, face_visible: bool, orientation_good: bool,
@@ -693,6 +768,47 @@ class PreciseAttentionTracker:
         
         return frame
 
+    def _draw_ai_popup(self, frame: np.ndarray):
+        """Draw AI popup message with fade effect"""
+        if self.ai_popup_alpha <= 0:
+            return
+        
+        # Calculate position (top-center)
+        text = self.ai_popup_message
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.7
+        thickness = 2
+        
+        # Get text size
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+        
+        # Calculate position
+        x = (self.frame_width - text_width) // 2
+        y = 40
+        
+        # Draw background rectangle with rounded corners
+        padding = 10
+        rect_x1 = x - padding
+        rect_y1 = y - text_height - padding
+        rect_x2 = x + text_width + padding
+        rect_y2 = y + baseline + padding
+        
+        # Create overlay for alpha blending
+        overlay = frame.copy()
+        
+        # Draw rounded rectangle background
+        cv2.rectangle(overlay, (rect_x1, rect_y1), (rect_x2, rect_y2), (0, 0, 255), -1)
+        
+        # Draw text
+        cv2.putText(overlay, text, (x, y), font, font_scale, (255, 255, 255), thickness)
+        
+        # Blend with alpha
+        alpha = self.ai_popup_alpha / 255.0
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        
+        # Fade out
+        self.ai_popup_alpha = max(0, self.ai_popup_alpha - 20)
+
     def run(self):
         """Run the main attention tracking loop"""
         print("Starting Precise Attention Tracker...")
@@ -724,6 +840,13 @@ class PreciseAttentionTracker:
                 cv2.rectangle(frame, (10, 10), (self.frame_width - 10, self.frame_height - 10), 
                              (0, 0, 255), 4)
             
+            # Draw AI popup if active
+            if self.ai_popup_alpha > 0 and self.ai_popup_timer > 0:
+                self._draw_ai_popup(frame)
+                self.ai_popup_timer -= 1
+                if self.ai_popup_timer <= 0:
+                    self.ai_popup_alpha = 0
+            
             # Display frame
             cv2.imshow('Precise Attention Tracker', frame)
             
@@ -746,7 +869,11 @@ class PreciseAttentionTracker:
                 "hand_near_face": bool(metrics.get("hand_near_face", False)),
                 "posture_stable": bool(metrics.get("posture_stable", False)),
                 "phone_objects_count": int(len(metrics.get("phone_objects", []))),
-                "fps": float(metrics.get("fps", 0.0))
+                "fps": float(metrics.get("fps", 0.0)),
+                # AI Helper results
+                "ai_detected_phone": bool(metrics.get("ai_detected_phone", False)),
+                "ai_confidence": float(metrics.get("ai_confidence", 0.0)),
+                "ai_triggered": bool(metrics.get("ai_triggered", False))
             }, indent=None))
             
             key = cv2.waitKey(1) & 0xFF
