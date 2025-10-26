@@ -78,9 +78,14 @@ pids
 *.avi
 *.mov
 screenshots/
+
+# Ignore images everywhere except in public folder
 *.png
 *.jpg
 *.jpeg
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
 
 # Temporary files
 *.tmp
