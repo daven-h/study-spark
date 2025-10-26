@@ -1,1 +1,1 @@
-# study-app
+Study Spark is designed to help students build better study habits through proven techniques and progress tracking. We believe that focused, intentional study sessions lead to better learning outcomes and reduced stress.
