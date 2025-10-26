@@ -10,20 +10,25 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
+# Navigate to the correct directory
+cd "$(dirname "$0")"
+
 # Check if we're in the right directory
-if [ ! -f "websocket_server.py" ]; then
-    echo "❌ websocket_server.py not found. Please run this script from the src/attention directory"
+if [ ! -f "advanced_server.py" ]; then
+    echo "❌ advanced_server.py not found. Please check the file location"
     exit 1
 fi
 
 # Check if dependencies are installed
 echo "🔍 Checking dependencies..."
-python3 -c "import mediapipe, cv2, websockets" 2>/dev/null
+python3 -c "import mediapipe, cv2, flask" 2>/dev/null
 if [ $? -ne 0 ]; then
-    echo "❌ Required dependencies not installed. Installing now..."
+    echo "❌ Required dependencies not installed."
+    echo "📦 Installing dependencies from requirements.txt..."
     pip3 install -r requirements.txt
     if [ $? -ne 0 ]; then
         echo "❌ Failed to install dependencies"
+        echo "💡 Try running: pip3 install mediapipe opencv-python flask flask-cors numpy scipy"
         exit 1
     fi
     echo "✅ Dependencies installed successfully"
@@ -32,7 +37,7 @@ else
 fi
 
 echo ""
-echo "🎯 Starting WebSocket server on localhost:8765"
+echo "🎯 Starting HTTP API server on localhost:8765"
 echo "📱 Make sure your camera is connected and accessible"
 echo "🌐 The Next.js frontend will connect automatically"
 echo ""

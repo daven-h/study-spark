@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
+    "server": "cd src/attention && ./start_server.sh",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
