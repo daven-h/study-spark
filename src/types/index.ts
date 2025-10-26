@@ -39,7 +39,6 @@ export interface DataAdapter {
   signInGoogle(): Promise<User>;
   signOut(): Promise<void>;
   addSession(session: Session): Promise<void>;
-  endSession(sessionId: string, endedAt: number): Promise<void>;
   getSessions(): Promise<Session[]>;
   getUser(): Promise<User | null>;
 }
