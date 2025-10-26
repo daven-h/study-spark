@@ -1,0 +1,23 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Python files
+*.py text eol=lf
+*.pyc binary
+*.pyo binary
+
+# MediaPipe and other binary files
+*.pb binary
+*.pb2 binary
+
+# Virtual environment (should be ignored)
+venv/ binary
+node_modules/ binary
+
+# Other text files
+*.md text
+*.txt text
+*.json text
+*.yml text
+*.yaml text
+*.toml text

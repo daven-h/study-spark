@@ -1,0 +1,7 @@
+{
+  "/focus/page": "app/focus/page.js",
+  "/methods/[slug]/page": "app/methods/[slug]/page.js",
+  "/methods/page": "app/methods/page.js",
+  "/page": "app/page.js",
+  "/progress/page": "app/progress/page.js"
+}

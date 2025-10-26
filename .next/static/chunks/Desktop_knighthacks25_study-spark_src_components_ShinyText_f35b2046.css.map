@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/anishaandapally/Desktop/knighthacks25/study-spark/src/components/ShinyText.css"],"sourcesContent":[".shiny-text {\n  color: #3f403f;\n  background-image: linear-gradient(\n    90deg,\n    #3f403f 0%,\n    #3f403f 40%,\n    #ffffff 50%,\n    #939f5c 51%,\n    #ffffff 52%,\n    #3f403f 60%,\n    #3f403f 100%\n  );\n  background-size: 300% 100%;\n  -webkit-background-clip: text;\n  -webkit-text-fill-color: transparent;\n  background-clip: text;\n  display: inline-block;\n  animation: shine 3s ease-in-out infinite;\n}\n\n@keyframes shine {\n  0% {\n    background-position: -100%;\n  }\n  50% {\n    background-position: 100%;\n  }\n  100% {\n    background-position: 100%;\n  }\n}\n\n.shiny-text.disabled {\n  animation: none;\n  color: #3f403f;\n  background: none;\n  -webkit-text-fill-color: #3f403f;\n  -webkit-background-clip: unset;\n  background-clip: unset;\n}"],"names":[],"mappings":"AAAA;;;;;;;;;;;AAoBA;;;;;;;;;;;;;;AAYA","debugId":null}}]
+}
