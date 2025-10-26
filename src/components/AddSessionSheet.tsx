@@ -12,30 +12,30 @@ import type { MethodSlug } from "@/types";
 
 export default function AddSessionSheet({ className }: { className?: string }) {
   const addSession = useAppStore(s => s.addSession);
-  const [title, setTitle] = useState("");
+  const [task, setTask] = useState("");
   const [method, setMethod] = useState<MethodSlug>("pomodoro");
   const [completed, setCompleted] = useState(true);
   const [minutes, setMinutes] = useState<number>(25);
   const [dateISO, setDateISO] = useState<string>(new Date().toISOString().slice(0,10));
 
   function onSave() {
-    if (!title.trim()) return;
+    if (!task.trim()) return;
     if (completed && (!minutes || minutes <= 0)) return;
-    
+
     const newSession = {
       id: `session-${Date.now()}`,
-      title: title.trim(),
+      task: task.trim(),
       method,
       completed,
       minutes: completed ? minutes : 0,
       dateISO,
       createdAt: Date.now()
     };
-    
+
     addSession(newSession);
-    
+
     // Reset form
-    setTitle("");
+    setTask("");
     setMethod("pomodoro");
     setCompleted(true);
     setMinutes(25);
@@ -59,12 +59,12 @@ export default function AddSessionSheet({ className }: { className?: string }) {
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor="title" className="font-norwester text-[#575b44]">Title</Label>
-            <Input 
-              id="title" 
-              value={title} 
-              onChange={e => setTitle(e.target.value)} 
-              placeholder="e.g., Biology Chapter 5" 
+            <Label htmlFor="task" className="font-norwester text-[#575b44]">Task</Label>
+            <Input
+              id="task"
+              value={task}
+              onChange={e => setTask(e.target.value)}
+              placeholder="e.g., Biology Chapter 5"
             />
           </div>
 
