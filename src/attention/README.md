@@ -1,130 +1,141 @@
-# Python Attention Tracking Engine
+# Study Spark - AI-Powered Focus Tracking
 
-A real-time attention tracking system using MediaPipe and OpenCV that detects face, hands, and torso to compute focus scores and distraction detection.
+This project integrates computer vision-based attention tracking with a Next.js frontend to provide real-time focus monitoring during study sessions.
 
 ## Features
 
-- **Real-time Face Detection**: Uses MediaPipe FaceMesh for precise face landmark detection
-- **Hand Tracking**: Detects hands and identifies when they're near the face (phone usage)
-- **Posture Analysis**: Monitors torso position to detect slouching
-- **Focus Scoring**: Computes real-time focus scores based on multiple factors
-- **Attention Ring**: Visual overlay showing focus state with color-coded ring
-- **WebSocket Server**: Optional real-time data streaming to web frontend
-- **Privacy-Safe**: All processing happens on-device, no cloud dependencies
+- **Real-time Attention Tracking**: Uses MediaPipe and OpenCV to track eye movement, head pose, and facial expressions
+- **Phone Detection**: Detects when users are distracted by their phones
+- **WebSocket Communication**: Real-time data streaming between Python backend and Next.js frontend
+- **Session Analytics**: Stores attention scores and metrics for each study session
+- **Visual Feedback**: Live indicators showing focus status, eye aspect ratio, and attention score
 
-## Installation
+## Setup Instructions
 
-1. Install Python dependencies:
+### 1. Install Python Dependencies
+
 ```bash
 cd src/attention
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
-2. Ensure you have a working webcam connected to your system.
-
-## Usage
-
-### Basic Attention Tracking
-
-Run the main attention tracker with webcam feed:
+### 2. Start the AI Server
 
 ```bash
-python main.py
+cd src/attention
+./start_server.sh
 ```
 
-**Controls:**
-- `q` - Quit
-- `r` - Reset focus history
-- `s` - Save screenshot
-- `l` - Toggle landmark display
-- `g` - Toggle focus grid
+Or manually:
+```bash
+cd src/attention
+python3 http_server.py
+```
 
-### WebSocket Server
+The server will start on `http://localhost:8765`
 
-Start the WebSocket server for frontend integration:
+### 3. Start the Next.js Frontend
 
 ```bash
-python server.py
+# From project root
+npm run dev
 ```
 
-The server will run on `ws://localhost:8765` and stream real-time focus data.
+The frontend will be available at `http://localhost:3000`
 
-### Test Installation
+### 4. Using the Focus Session
 
-Verify everything is working:
+1. Navigate to the Focus page (`/focus`)
+2. Ensure the AI server is running (you'll see "🔗 AI Connected" status)
+3. Allow camera permissions when prompted
+4. Click "Start Session" to begin tracking
+5. The AI will monitor your attention in real-time
+6. Click "Stop Session" to end and save the session data
 
-```bash
-python test_installation.py
-```
+## Technical Details
 
-## Output Format
+### Attention Tracking Metrics
 
-The system outputs JSON data with the following structure:
+- **Eye Aspect Ratio (EAR)**: Measures eye openness to detect drowsiness
+- **Mouth Aspect Ratio (MAR)**: Detects yawning or talking
+- **Head Pose**: Tracks head orientation to detect distraction
+- **Phone Detection**: Uses YOLO to detect phones in the camera view
+- **Attention Score**: Combined metric (0-1) indicating overall focus level
 
+### HTTP API Protocol
+
+The server communicates with the frontend using HTTP REST API:
+
+**API Endpoints:**
+- `GET /api/ping` - Check server status
+- `POST /api/start_tracking` - Start attention tracking
+- `POST /api/stop_tracking` - Stop attention tracking
+- `GET /api/attention_data` - Get current attention data
+- `GET /api/status` - Get server status
+
+**Response Format:**
 ```json
 {
-  "timestamp": "2025-10-24T19:10:22Z",
-  "focused": true,
-  "focus_score": 0.93,
-  "yaw": 0.03,
-  "pitch": 0.05,
-  "hand_near_face": false,
-  "posture_stable": true,
-  "fps": 28.7
+  "success": true,
+  "data": {
+    "attention_score": 0.85,
+    "eye_ar": 0.25,
+    "mouth_ar": 0.12,
+    "head_tilt": 5.2,
+    "phone_detected": false,
+    "fps": 30,
+    "timestamp": 1234567890,
+    "focus_status": "focused",
+    "session_active": true
+  },
+  "timestamp": 1234567890
 }
 ```
 
-## Focus Evaluation
-
-The system evaluates focus based on:
-
-1. **Face Visibility**: Is the face detected and visible?
-2. **Face Orientation**: Is the person looking straight ahead?
-3. **Hand Position**: Are hands away from the face?
-4. **Posture**: Is the person sitting upright?
-5. **Face Centering**: Is the face centered in the frame?
-
-## Architecture
+### File Structure
 
 ```
 src/attention/
-├── main.py              # Main application with webcam loop
-├── tracker.py           # MediaPipe detection (face, hands, pose)
-├── focus_logic.py       # Focus evaluation and scoring
-├── visualizer.py        # Attention ring and overlay rendering
-├── server.py            # WebSocket server for real-time streaming
-├── utils.py             # Geometry and analysis utilities
-├── requirements.txt     # Python dependencies
-└── README.md           # This file
+├── precise_attention_tracker.py    # Main attention tracking logic
+├── flexible_phone_detector.py      # Phone detection using YOLO
+├── websocket_server.py            # WebSocket server for frontend communication
+├── start_server.sh                # Convenient startup script
+├── requirements.txt               # Python dependencies
+└── README.md                      # This file
 ```
-
-## Performance
-
-- **Target FPS**: 20-30 FPS
-- **Latency**: <50ms processing time
-- **CPU Usage**: Moderate (MediaPipe optimized)
-- **Memory**: Low footprint
 
 ## Troubleshooting
 
-**Camera Issues:**
-- Ensure camera is not being used by other applications
-- Try different camera indices: `--camera 1`, `--camera 2`
-- Check camera permissions
+### Camera Issues
+- Ensure camera permissions are granted
+- Check if another application is using the camera
+- Try refreshing the page
 
-**Performance Issues:**
-- Reduce frame resolution: `--width 320 --height 240`
-- Disable landmarks: `--no-landmarks`
+### WebSocket Connection Issues
+- Verify the Python server is running on port 8765
+- Check browser console for connection errors
+- Ensure no firewall is blocking the connection
+
+### Performance Issues
 - Close other applications using the camera
+- Reduce video resolution in browser settings
+- Check system resources (CPU/Memory usage)
 
-**WebSocket Connection Issues:**
-- Check firewall settings
-- Ensure port 8765 is available
-- Verify WebSocket client implementation
+## Development
 
-## Privacy & Security
+### Adding New Metrics
+1. Modify `precise_attention_tracker.py` to calculate new metrics
+2. Update the `AttentionData` interface in `page.tsx`
+3. Add UI elements to display the new metrics
 
-- All processing happens locally on your device
-- No data is sent to external servers
-- Camera feed is processed in real-time and not stored
-- WebSocket server only runs locally by default
+### Customizing Detection Thresholds
+Edit the thresholds in `precise_attention_tracker.py`:
+```python
+self.eye_ar_threshold = 0.20      # Eye aspect ratio threshold
+self.mouth_ar_threshold = 0.88    # Mouth aspect ratio threshold
+self.head_tilt_threshold = 180.0  # Head tilt threshold
+```
+
+## License
+
+This project is part of Study Spark - an AI-powered study companion.

@@ -1,0 +1,11 @@
+var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/auth/callback/route.js")
+R.c("server/chunks/59869_@supabase_node-fetch_lib_index_4873c360.js")
+R.c("server/chunks/59869_next_a50f88c3._.js")
+R.c("server/chunks/59869_tr46_312f2d28._.js")
+R.c("server/chunks/59869_@supabase_storage-js_dist_module_3de406e4._.js")
+R.c("server/chunks/59869_@supabase_auth-js_dist_module_8d666c7a._.js")
+R.c("server/chunks/59869_0ffa504d._.js")
+R.c("server/chunks/[root-of-the-server]__4fbab946._.js")
+R.m("[project]/Desktop/knighthacks25/study-spark/.next-internal/server/app/auth/callback/route/actions.js [app-rsc] (server actions loader, ecmascript)")
+R.m("[project]/Desktop/knighthacks25/study-spark/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/Desktop/knighthacks25/study-spark/src/app/auth/callback/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/Desktop/knighthacks25/study-spark/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/Desktop/knighthacks25/study-spark/src/app/auth/callback/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

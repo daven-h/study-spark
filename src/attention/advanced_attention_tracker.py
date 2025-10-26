@@ -1,6 +1,6 @@
 """
-Advanced Attention Tracker using dlib 68-point facial landmarks
-More accurate gaze, eye, and mouth detection
+Simplified Advanced Attention Tracker (MediaPipe-only version)
+Uses MediaPipe for facial analysis without dlib dependency
 """
 
 import cv2
@@ -12,10 +12,6 @@ from typing import Dict, Any, Tuple, Optional, List
 import mediapipe as mp
 import threading
 from scipy.spatial import distance as dist
-import imutils
-from imutils import face_utils
-from imutils.video import VideoStream
-import dlib
 
 from flexible_phone_detector import FlexiblePhoneDetector
 
@@ -39,7 +35,7 @@ class FPSCounter:
 
 class AdvancedAttentionTracker:
     """
-    Advanced Attention Tracker using dlib 68-point facial landmarks
+    Advanced Attention Tracker using MediaPipe (simplified version)
     More accurate gaze, eye, and mouth detection
     """
     
@@ -54,16 +50,7 @@ class AdvancedAttentionTracker:
         if not self.initialize_camera():
             raise IOError("Cannot open webcam")
         
-        # Initialize dlib face detector and predictor
-        self.detector = dlib.get_frontal_face_detector()
-        try:
-            self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
-            print("✅ dlib predictor loaded")
-        except:
-            print("⚠️ dlib predictor not found, using MediaPipe fallback")
-            self.predictor = None
-        
-        # Initialize MediaPipe as fallback
+        # Initialize MediaPipe
         self.mp_face_mesh = mp.solutions.face_mesh
         self.mp_hands = mp.solutions.hands
         self.mp_pose = mp.solutions.pose
@@ -107,7 +94,7 @@ class AdvancedAttentionTracker:
         self.eye_ar_threshold = 0.20
         self.mouth_ar_threshold = 0.88
         self.eye_ar_consec_frames = 3
-        self.head_tilt_threshold = 15.0  # degrees
+        self.head_tilt_threshold = 45.0  # degrees (more lenient)
         
         # Model points for head pose estimation
         self.model_points = np.array([
@@ -123,8 +110,8 @@ class AdvancedAttentionTracker:
         self.eye_closure_counter = 0
         
         print(f"✅ Advanced Attention Tracker initialized: {self.frame_width}x{self.frame_height}")
-        print("📱 dlib 68-point landmarks + Flexible Phone Detection")
-        print("🎯 Advanced Gaze, Eye, and Mouth Analysis")
+        print("📱 MediaPipe + Advanced Gaze Analysis + Phone Detection")
+        print("🎯 Advanced Eye, Mouth, and Head Pose Analysis")
 
     def initialize_camera(self) -> bool:
         """Initialize camera capture"""
@@ -157,41 +144,55 @@ class AdvancedAttentionTracker:
         mar = (A + B) / (2.0 * C)
         return mar
 
-    def is_rotation_matrix(self, matrix):
-        """Check if matrix is a rotation matrix"""
-        matrix_t = np.transpose(matrix)
-        identity_should_be = np.dot(matrix_t, matrix)
-        identity_matrix = np.identity(3, dtype=matrix.dtype)
-        return np.linalg.norm(identity_matrix - identity_should_be) < 1e-6
+    def get_mediapipe_eye_landmarks(self, face_landmarks):
+        """Extract eye landmarks from MediaPipe face mesh"""
+        # MediaPipe face mesh eye indices
+        left_eye_indices = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246]
+        right_eye_indices = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398]
+        
+        left_eye = []
+        right_eye = []
+        
+        for idx in left_eye_indices:
+            if idx < len(face_landmarks.landmark):
+                lm = face_landmarks.landmark[idx]
+                left_eye.append([lm.x * self.frame_width, lm.y * self.frame_height])
+        
+        for idx in right_eye_indices:
+            if idx < len(face_landmarks.landmark):
+                lm = face_landmarks.landmark[idx]
+                right_eye.append([lm.x * self.frame_width, lm.y * self.frame_height])
+        
+        return np.array(left_eye), np.array(right_eye)
 
-    def calculate_euler_angles(self, matrix):
-        """Calculate Euler angles from rotation matrix"""
-        assert (self.is_rotation_matrix(matrix))
-        sy = math.sqrt(matrix[0, 0] * matrix[0, 0] + matrix[1, 0] * matrix[1, 0])
-        singular = sy < 1e-6
+    def get_mediapipe_mouth_landmarks(self, face_landmarks):
+        """Extract mouth landmarks from MediaPipe face mesh"""
+        # MediaPipe face mesh mouth indices
+        mouth_indices = [61, 84, 17, 314, 405, 320, 307, 375, 321, 308, 324, 318]
+        
+        mouth = []
+        for idx in mouth_indices:
+            if idx < len(face_landmarks.landmark):
+                lm = face_landmarks.landmark[idx]
+                mouth.append([lm.x * self.frame_width, lm.y * self.frame_height])
+        
+        return np.array(mouth)
 
-        if not singular:
-            x_angle = math.atan2(matrix[2, 1], matrix[2, 2])
-            y_angle = math.atan2(-matrix[2, 0], sy)
-            z_angle = math.atan2(matrix[1, 0], matrix[0, 0])
-        else:
-            x_angle = math.atan2(-matrix[1, 2], matrix[1, 1])
-            y_angle = math.atan2(-matrix[2, 0], sy)
-            z_angle = 0
-
-        return np.array([x_angle, y_angle, z_angle])
-
-    def get_head_pose(self, frame, landmarks):
-        """Calculate head pose using 6 key facial landmarks"""
+    def get_head_pose_from_mediapipe(self, frame, face_landmarks):
+        """Calculate head pose using MediaPipe landmarks"""
         # Key facial landmarks for head pose
-        image_points = np.array([
-            landmarks[33],  # Nose tip
-            landmarks[8],   # Chin
-            landmarks[36],  # Left eye left corner
-            landmarks[45],  # Right eye right corner
-            landmarks[48],  # Left mouth corner
-            landmarks[54]   # Right mouth corner
-        ], dtype="double")
+        key_indices = [33, 8, 36, 45, 48, 54]  # Nose tip, chin, eye corners, mouth corners
+        image_points = []
+        
+        for idx in key_indices:
+            if idx < len(face_landmarks.landmark):
+                lm = face_landmarks.landmark[idx]
+                image_points.append([lm.x * self.frame_width, lm.y * self.frame_height])
+        
+        if len(image_points) != 6:
+            return 0.0, 0.0, 0.0
+        
+        image_points = np.array(image_points, dtype="double")
         
         # Camera parameters
         focal_length = frame.shape[1]
@@ -212,7 +213,6 @@ class AdvancedAttentionTracker:
         )
 
         if success:
-            # Convert rotation vector to rotation matrix
             rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
             euler_angles = self.calculate_euler_angles(rotation_matrix)
             
@@ -224,6 +224,22 @@ class AdvancedAttentionTracker:
             return yaw, pitch, roll
         else:
             return 0.0, 0.0, 0.0
+
+    def calculate_euler_angles(self, matrix):
+        """Calculate Euler angles from rotation matrix"""
+        sy = math.sqrt(matrix[0, 0] * matrix[0, 0] + matrix[1, 0] * matrix[1, 0])
+        singular = sy < 1e-6
+
+        if not singular:
+            x_angle = math.atan2(matrix[2, 1], matrix[2, 2])
+            y_angle = math.atan2(-matrix[2, 0], sy)
+            z_angle = math.atan2(matrix[1, 0], matrix[0, 0])
+        else:
+            x_angle = math.atan2(-matrix[1, 2], matrix[1, 1])
+            y_angle = math.atan2(-matrix[2, 0], sy)
+            z_angle = 0
+
+        return np.array([x_angle, y_angle, z_angle])
 
     def run_phone_detection_async(self, frame, face_bbox):
         """Run phone detection in background thread"""
@@ -297,8 +313,13 @@ class AdvancedAttentionTracker:
         """Process a single frame with advanced facial analysis"""
         self.frame_count += 1
         
-        # Convert to grayscale for dlib
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Convert to RGB for MediaPipe
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        # Process with MediaPipe
+        face_results = self.face_mesh.process(rgb_frame)
+        hands_results = self.hands.process(rgb_frame)
+        pose_results = self.pose.process(rgb_frame)
         
         # Initialize results
         face_visible = False
@@ -310,30 +331,29 @@ class AdvancedAttentionTracker:
         pitch = 0.0
         roll = 0.0
         orientation_good = True
+        ear = 0.0
+        mar = 0.0
         
-        # Try dlib first (more accurate)
-        if self.predictor is not None:
-            rects = self.detector(gray, 0)
+        # Process face landmarks
+        if face_results.multi_face_landmarks:
+            face_visible = True
+            face_landmarks = face_results.multi_face_landmarks[0]
             
-            if len(rects) > 0:
-                face_visible = True
-                rect = rects[0]
-                
-                # Get facial landmarks
-                shape = self.predictor(gray, rect)
-                shape = face_utils.shape_to_np(shape)
-                
-                # Calculate face bounding box
-                (bX, bY, bW, bH) = face_utils.rect_to_bb(rect)
-                face_bbox = (bX, bY, bX + bW, bY + bH)
-                
-                # Eye aspect ratio analysis
-                (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
-                (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
-                (mStart, mEnd) = (49, 68)
-                
-                left_eye = shape[lStart:lEnd]
-                right_eye = shape[rStart:rEnd]
+            # Calculate face bounding box
+            all_x, all_y = [], []
+            for landmark in face_landmarks.landmark:
+                all_x.append(landmark.x)
+                all_y.append(landmark.y)
+            
+            x_min = int(min(all_x) * self.frame_width)
+            x_max = int(max(all_x) * self.frame_width)
+            y_min = int(min(all_y) * self.frame_height)
+            y_max = int(max(all_y) * self.frame_height)
+            face_bbox = (x_min, y_min, x_max, y_max)
+            
+            # Extract eye landmarks and calculate EAR
+            left_eye, right_eye = self.get_mediapipe_eye_landmarks(face_landmarks)
+            if len(left_eye) >= 6 and len(right_eye) >= 6:
                 left_ear = self.eye_aspect_ratio(left_eye)
                 right_ear = self.eye_aspect_ratio(right_eye)
                 ear = (left_ear + right_ear) / 2.0
@@ -345,45 +365,23 @@ class AdvancedAttentionTracker:
                         eye_closed = True
                 else:
                     self.eye_closure_counter = 0
-                
-                # Mouth aspect ratio analysis
-                mouth = shape[mStart:mEnd]
+            
+            # Extract mouth landmarks and calculate MAR
+            mouth = self.get_mediapipe_mouth_landmarks(face_landmarks)
+            if len(mouth) >= 12:
                 mar = self.mouth_aspect_ratio(mouth)
                 
                 if mar > self.mouth_ar_threshold:
                     yawning = True
-                
-                # Head pose analysis
-                yaw, pitch, roll = self.get_head_pose(frame, shape)
-                head_tilt = abs(roll)
-                
-                # Orientation analysis
-                orientation_good = (abs(yaw) < 15.0 and abs(pitch) < 15.0 and head_tilt < self.head_tilt_threshold)
-        
-        # Fallback to MediaPipe if dlib fails
-        if not face_visible:
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            face_results = self.face_mesh.process(rgb_frame)
             
-            if face_results.multi_face_landmarks:
-                face_visible = True
-                face_landmarks = face_results.multi_face_landmarks[0]
-                
-                # Calculate face bounding box
-                all_x, all_y = [], []
-                for landmark in face_landmarks.landmark:
-                    all_x.append(landmark.x)
-                    all_y.append(landmark.y)
-                
-                x_min = int(min(all_x) * self.frame_width)
-                x_max = int(max(all_x) * self.frame_width)
-                y_min = int(min(all_y) * self.frame_height)
-                y_max = int(max(all_y) * self.frame_height)
-                face_bbox = (x_min, y_min, x_max, y_max)
+            # Calculate head pose
+            yaw, pitch, roll = self.get_head_pose_from_mediapipe(frame, face_landmarks)
+            head_tilt = abs(roll)
+            
+            # Orientation analysis - more lenient thresholds
+            orientation_good = (abs(yaw) < 30.0 and abs(pitch) < 30.0 and head_tilt < 45.0)
         
-        # Hand detection using MediaPipe
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        hands_results = self.hands.process(rgb_frame)
+        # Hand detection
         hand_landmarks = []
         hand_near_face = False
         
@@ -408,13 +406,7 @@ class AdvancedAttentionTracker:
         if face_bbox and phone_objects:
             phone_near_face, phone_confidence = self.is_phone_near_face(face_bbox, phone_objects)
         
-        # Enhanced phone detection
-        if hand_near_face and phone_objects:
-            phone_near_face = True
-            phone_confidence = max(phone_confidence, max(obj.get('confidence', 0.0) for obj in phone_objects))
-        
         # Posture analysis
-        pose_results = self.pose.process(rgb_frame)
         posture_stable = True
         if pose_results.pose_landmarks:
             try:
@@ -424,7 +416,7 @@ class AdvancedAttentionTracker:
             except (IndexError, AttributeError):
                 posture_stable = True
         
-        # Calculate focus score
+        # Calculate focus score using advanced metrics
         focus_components = {
             "face_visibility": 1.0 if face_visible else 0.0,
             "orientation": 1.0 if orientation_good else 0.0,
@@ -448,14 +440,13 @@ class AdvancedAttentionTracker:
         
         focus_score = sum(weights[component] * score for component, score in focus_components.items())
         
-        # Overall focus determination
-        focused = (focus_score > 0.7 and not phone_near_face and face_visible and 
-                  orientation_good and not eye_closed and not yawning)
+        # Overall focus determination - more lenient criteria
+        focused = (focus_score > 0.5 and not phone_near_face and face_visible)
         
         # Generate status messages
         status_messages = self.generate_status_messages(
             face_visible, orientation_good, phone_near_face, hand_near_face,
-            phone_confidence, posture_stable, eye_closed, yawning, yaw, pitch, head_tilt
+            phone_confidence, posture_stable, eye_closed, yawning, yaw, pitch, head_tilt, ear, mar
         )
         
         # Add FPS
@@ -472,6 +463,8 @@ class AdvancedAttentionTracker:
             "head_tilt": head_tilt,
             "eye_closed": eye_closed,
             "yawning": yawning,
+            "ear": ear,
+            "mar": mar,
             "phone_near_face": phone_near_face,
             "hand_near_face": hand_near_face,
             "phone_confidence": phone_confidence,
@@ -484,8 +477,9 @@ class AdvancedAttentionTracker:
     def generate_status_messages(self, face_visible: bool, orientation_good: bool,
                                 phone_near_face: bool, hand_near_face: bool,
                                 phone_confidence: float, posture_stable: bool,
-                                eye_closed: bool, yawning: bool, yaw: float, pitch: float, head_tilt: float) -> Dict[str, Dict[str, str]]:
-        """Generate clear, readable status messages"""
+                                eye_closed: bool, yawning: bool, yaw: float, pitch: float, head_tilt: float,
+                                ear: float, mar: float) -> Dict[str, Dict[str, str]]:
+        """Generate clear, readable status messages with precise metrics"""
         
         # Face status
         if face_visible:
@@ -501,29 +495,29 @@ class AdvancedAttentionTracker:
             orientation_color = "green"
         else:
             if abs(yaw) > 15.0:
-                orientation_status = "↩ Turn head forward"
+                orientation_status = f"↩ Turn head forward (yaw: {yaw:.1f}°)"
             elif abs(pitch) > 15.0:
-                orientation_status = "↕ Look straight ahead"
+                orientation_status = f"↕ Look straight ahead (pitch: {pitch:.1f}°)"
             elif head_tilt > self.head_tilt_threshold:
-                orientation_status = "↻ Straighten head"
+                orientation_status = f"↻ Straighten head (tilt: {head_tilt:.1f}°)"
             else:
                 orientation_status = "↩ Adjust head orientation"
             orientation_color = "red"
         
-        # Eye status
+        # Eye status with EAR
         if eye_closed:
-            eye_status = "😴 Eyes closed"
+            eye_status = f"😴 Eyes closed (EAR: {ear:.3f})"
             eye_color = "red"
         else:
-            eye_status = "👁 Eyes open"
+            eye_status = f"👁 Eyes open (EAR: {ear:.3f})"
             eye_color = "green"
         
-        # Mouth status
+        # Mouth status with MAR
         if yawning:
-            mouth_status = "😴 Yawning"
+            mouth_status = f"😴 Yawning (MAR: {mar:.3f})"
             mouth_color = "red"
         else:
-            mouth_status = "😐 Normal"
+            mouth_status = f"😐 Normal (MAR: {mar:.3f})"
             mouth_color = "green"
         
         # Interaction status
@@ -580,169 +574,3 @@ class AdvancedAttentionTracker:
             "posture": {"text": posture_status, "color": posture_color},
             "overall": {"text": overall_status, "color": overall_color}
         }
-
-    def draw_advanced_status_overlay(self, frame, metrics):
-        """Draw advanced status overlay with detailed analysis"""
-        status_messages = metrics.get("status_messages", {})
-        
-        # Main status panel
-        panel_width = 350
-        panel_height = 280
-        panel_x = self.frame_width - panel_width - 20
-        panel_y = 20
-        
-        # Background
-        cv2.rectangle(frame, (panel_x, panel_y), 
-                     (panel_x + panel_width, panel_y + panel_height), 
-                     (20, 20, 20), -1)
-        cv2.rectangle(frame, (panel_x, panel_y), 
-                     (panel_x + panel_width, panel_y + panel_height), 
-                     (60, 60, 60), 2)
-        
-        # Title
-        cv2.putText(frame, "ADVANCED ATTENTION TRACKER", (panel_x + 10, panel_y + 25),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        
-        # Status items
-        y_start = panel_y + 50
-        status_items = [
-            ("FACE", status_messages.get("face", {}).get("text", "No face detected")),
-            ("ORIENTATION", status_messages.get("orientation", {}).get("text", "Looking forward")),
-            ("EYE", status_messages.get("eye", {}).get("text", "Eyes open")),
-            ("MOUTH", status_messages.get("mouth", {}).get("text", "Normal")),
-            ("INTERACTION", status_messages.get("interaction", {}).get("text", "No interaction")),
-            ("POSTURE", status_messages.get("posture", {}).get("text", "Good posture")),
-            ("OVERALL", status_messages.get("overall", {}).get("text", "Focused"))
-        ]
-        
-        for i, (label, text) in enumerate(status_items):
-            y_pos = y_start + (i * 30)
-            
-            # Label
-            cv2.putText(frame, label, (panel_x + 10, y_pos),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (180, 180, 180), 1)
-            
-            # Status text with color
-            color = (0, 255, 0) if "✓" in text or "✅" in text else (0, 0, 255) if "✗" in text or "❌" in text else (0, 165, 255)
-            cv2.putText(frame, text, (panel_x + 10, y_pos + 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-        
-        # Metrics panel
-        metrics_width = 200
-        metrics_height = 100
-        metrics_x = self.frame_width - metrics_width - 20
-        metrics_y = self.frame_height - metrics_height - 20
-        
-        # Metrics background
-        cv2.rectangle(frame, (metrics_x, metrics_y), 
-                     (metrics_x + metrics_width, metrics_y + metrics_height), 
-                     (20, 20, 20), -1)
-        cv2.rectangle(frame, (metrics_x, metrics_y), 
-                     (metrics_x + metrics_width, metrics_y + metrics_height), 
-                     (60, 60, 60), 1)
-        
-        # Metrics title
-        cv2.putText(frame, "METRICS", (metrics_x + 10, metrics_y + 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1)
-        
-        # Score and FPS
-        score_text = f"Score: {metrics.get('focus_score', 0.0):.2f}"
-        fps_text = f"FPS: {metrics.get('fps', 0.0):.1f}"
-        
-        cv2.putText(frame, score_text, (metrics_x + 10, metrics_y + 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(frame, fps_text, (metrics_x + 10, metrics_y + 60),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        
-        return frame
-
-    def draw_phone_detections(self, frame, phone_objects):
-        """Draw phone detection boxes"""
-        for obj in phone_objects:
-            x1, y1, x2, y2 = obj['bbox']
-            confidence = obj['confidence']
-            
-            # Draw bounding box
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            
-            # Draw label
-            label = f"Phone: {confidence:.2f}"
-            cv2.putText(frame, label, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        
-        return frame
-
-    def run(self):
-        """Run the main attention tracking loop"""
-        print("🚀 Starting Advanced Attention Tracker...")
-        print("📱 dlib 68-point landmarks + Flexible Phone Detection")
-        print("🎯 Advanced Gaze, Eye, and Mouth Analysis")
-        print("Press 'q' to quit, 's' to save screenshot")
-        
-        while True:
-            ret, frame = self.cap.read()
-            if not ret:
-                print("Failed to grab frame")
-                break
-            
-            # Process frame
-            metrics = self.process_frame(frame)
-            
-            # Draw overlays
-            frame = self.draw_advanced_status_overlay(frame, metrics)
-            frame = self.draw_phone_detections(frame, metrics.get("phone_objects", []))
-            
-            # Draw focus ring
-            if metrics.get("focused", False):
-                cv2.rectangle(frame, (10, 10), (self.frame_width - 10, self.frame_height - 10), 
-                             (0, 255, 0), 4)
-            else:
-                cv2.rectangle(frame, (10, 10), (self.frame_width - 10, self.frame_height - 10), 
-                             (0, 0, 255), 4)
-            
-            # Display frame
-            cv2.imshow('Advanced Attention Tracker', frame)
-            
-            # Output JSON for integration
-            print(json.dumps({
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "focused": metrics.get("focused", False),
-                "focus_score": metrics.get("focus_score", 0.0),
-                "face_visible": metrics.get("face_visible", False),
-                "orientation_good": metrics.get("orientation_good", False),
-                "yaw": metrics.get("yaw", 0.0),
-                "pitch": metrics.get("pitch", 0.0),
-                "roll": metrics.get("roll", 0.0),
-                "head_tilt": metrics.get("head_tilt", 0.0),
-                "eye_closed": metrics.get("eye_closed", False),
-                "yawning": metrics.get("yawning", False),
-                "phone_near_face": metrics.get("phone_near_face", False),
-                "hand_near_face": metrics.get("hand_near_face", False),
-                "posture_stable": metrics.get("posture_stable", False),
-                "phone_objects_count": len(metrics.get("phone_objects", [])),
-                "fps": metrics.get("fps", 0.0)
-            }, indent=None))
-            
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
-                break
-            elif key == ord('s'):
-                timestamp = time.strftime("%Y%m%d-%H%M%S")
-                filename = f"advanced_attention_screenshot_{timestamp}.png"
-                cv2.imwrite(filename, frame)
-                print(f"Screenshot saved as {filename}")
-        
-        self.cap.release()
-        cv2.destroyAllWindows()
-        print("✅ Advanced Attention Tracker stopped")
-
-def main():
-    tracker = AdvancedAttentionTracker(
-        camera_index=0, 
-        frame_width=640, 
-        frame_height=480
-    )
-    tracker.run()
-
-if __name__ == "__main__":
-    main()

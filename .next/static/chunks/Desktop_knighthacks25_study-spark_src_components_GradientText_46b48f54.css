@@ -1,0 +1,61 @@
+/* [project]/Desktop/knighthacks25/study-spark/src/components/GradientText.css [app-client] (css) */
+.animated-gradient-text {
+  display: inline-block;
+  position: relative;
+}
+
+.gradient-overlay {
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+  background-size: 300% 100%;
+  animation: linear infinite gradient;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.gradient-overlay:before {
+  content: "";
+  border-radius: inherit;
+  z-index: -1;
+  background-color: #060010;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0%;
+  }
+
+  50% {
+    background-position: 100%;
+  }
+
+  100% {
+    background-position: 0%;
+  }
+}
+
+.text-content {
+  z-index: 2;
+  -webkit-text-fill-color: transparent;
+  font-size: inherit;
+  font-weight: inherit;
+  color: rgba(0, 0, 0, 0);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: linear infinite gradient;
+  display: inline-block;
+  position: relative;
+}
+
+/*# sourceMappingURL=Desktop_knighthacks25_study-spark_src_components_GradientText_46b48f54.css.map*/
