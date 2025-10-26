@@ -66,6 +66,39 @@ ENV/
 env.bak/
 venv.bak/
 
+# Next.js
+.pnp
+.pnp.js
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+
+# Production
+dist/
+
+# Misc
+*.log
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
 # IDE
 .vscode/
 .idea/
@@ -74,7 +107,6 @@ venv.bak/
 *~
 
 # OS
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
@@ -84,10 +116,6 @@ Thumbs.db
 
 # Logs
 logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Runtime data
 pids
@@ -104,9 +132,14 @@ pids
 *.avi
 *.mov
 screenshots/
+
+# Ignore images everywhere except in public folder
 *.png
 *.jpg
 *.jpeg
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
 
 # Temporary files
 *.tmp

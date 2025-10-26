@@ -209,7 +209,7 @@ export default function FocusSessionPage() {
     // Create session record with attention data
     const session = {
       id: `session-${Date.now()}`,
-      title: `${lastMethod ? lastMethod.replace('-', ' ') : 'Study'} Session`,
+      task: `${lastMethod ? lastMethod.replace('-', ' ') : 'Study'} Session`,
       method: lastMethod || 'pomodoro',
       completed: true,
       minutes: durationMinutes,

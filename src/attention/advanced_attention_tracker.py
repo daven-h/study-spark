@@ -83,7 +83,7 @@ class AdvancedAttentionTracker:
         
         # Performance optimization
         self.fps_counter = FPSCounter()
-        self.detection_frame_skip = 2
+        self.detection_frame_skip = 5  # Check phone less frequently to reduce false positives
         self.last_phone_results = []
         
         # Threading for detection
@@ -286,7 +286,7 @@ class AdvancedAttentionTracker:
         
         return False
 
-    def is_phone_near_face(self, face_bbox, phone_objects, threshold=0.1):
+    def is_phone_near_face(self, face_bbox, phone_objects, threshold=0.2):
         """Check if phone objects overlap with face area"""
         if not face_bbox or not phone_objects:
             return False, 0.0
@@ -378,8 +378,8 @@ class AdvancedAttentionTracker:
             yaw, pitch, roll = self.get_head_pose_from_mediapipe(frame, face_landmarks)
             head_tilt = abs(roll)
             
-            # Orientation analysis - more lenient thresholds
-            orientation_good = (abs(yaw) < 30.0 and abs(pitch) < 30.0 and head_tilt < 45.0)
+            # Orientation analysis - very lenient thresholds
+            orientation_good = (abs(yaw) < 45.0 and abs(pitch) < 40.0 and head_tilt < 60.0)
         
         # Hand detection
         hand_landmarks = []
@@ -440,8 +440,9 @@ class AdvancedAttentionTracker:
         
         focus_score = sum(weights[component] * score for component, score in focus_components.items())
         
-        # Overall focus determination - more lenient criteria
-        focused = (focus_score > 0.5 and not phone_near_face and face_visible)
+        # Overall focus determination - very lenient criteria
+        # User is focused if: face visible, not using phone, and eyes are open
+        focused = (face_visible and not phone_near_face and not eye_closed)
         
         # Generate status messages
         status_messages = self.generate_status_messages(

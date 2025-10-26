@@ -13,7 +13,7 @@ export interface User {
 
 export interface Session {
   id: string;
-  title: string;
+  task: string;
   method: MethodSlug;
   completed: boolean;
   minutes: number;           // whole minutes focused
@@ -39,7 +39,6 @@ export interface DataAdapter {
   signInGoogle(): Promise<User>;
   signOut(): Promise<void>;
   addSession(session: Session): Promise<void>;
-  endSession(sessionId: string, endedAt: number): Promise<void>;
   getSessions(): Promise<Session[]>;
   getUser(): Promise<User | null>;
 }

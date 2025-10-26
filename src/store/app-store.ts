@@ -10,7 +10,6 @@ interface AppStore extends AppState {
   signOut: () => Promise<void>;
   syncUserFromSupabase: () => Promise<void>;
   addSession: (session: Session) => void;
-  endSession: (sessionId: string, endedAt: number) => void;
   setLastMethod: (method: MethodSlug) => void;
   computeStats: () => Stats;
   setUser: (user: User | null) => void;
@@ -75,20 +74,6 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           sessions: [...state.sessions, session],
           lastMethod: session.method
-        }));
-      },
-
-      endSession: (sessionId: string, endedAt: number) => {
-        set((state) => ({
-          sessions: state.sessions.map((session) =>
-            session.id === sessionId
-              ? {
-                  ...session,
-                  endedAt,
-                  durationSec: endedAt - session.startedAt
-                }
-              : session
-          )
         }));
       },
 

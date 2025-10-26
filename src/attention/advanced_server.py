@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HTTP server using YOUR ADVANCED ATTENTION TRACKER (dlib 68-point)
+HTTP server using YOUR ADVANCED ATTENTION TRACKER (MediaPipe-based)
 """
 
 from flask import Flask, jsonify, request
@@ -51,9 +51,9 @@ current_data = {
 }
 
 def run_your_advanced_algorithm():
-    """Background thread using YOUR ADVANCED dlib-based algorithm"""
+    """Background thread using YOUR ADVANCED MediaPipe-based algorithm"""
     global current_data, tracking_active, tracker
-    
+
     while tracking_active and tracker:
         try:
             # Use YOUR ADVANCED algorithm - capture frame
@@ -61,13 +61,16 @@ def run_your_advanced_algorithm():
             if not ret:
                 print("❌ Failed to read frame from camera")
                 continue
-            
+
+            # Flip frame for mirror effect
+            frame = cv2.flip(frame, 1)
+
             # Use YOUR COMPLETE process_frame algorithm
             metrics = tracker.process_frame(frame)
-            
+
             # Convert NumPy types to native Python types
             metrics = convert_numpy_types(metrics)
-            
+
             # Convert YOUR algorithm results to API format
             current_data.update({
                 'attention_score': metrics.get('focus_score', 0.0),
@@ -95,12 +98,14 @@ def run_your_advanced_algorithm():
                 'posture_stable': metrics.get('posture_stable', False),
                 'status_messages': metrics.get('status_messages', {})
             })
-            
+
             # Small delay to prevent overwhelming
             time.sleep(0.033)  # ~30 FPS
-            
+
         except Exception as e:
             print(f"Error in YOUR ADVANCED algorithm: {e}")
+            import traceback
+            traceback.print_exc()
             time.sleep(0.1)
 
 @app.route('/api/status', methods=['GET'])
@@ -115,32 +120,34 @@ def get_status():
 
 @app.route('/api/start_tracking', methods=['POST'])
 def start_tracking():
-    """Start tracking using YOUR ADVANCED dlib-based algorithm"""
+    """Start tracking using YOUR ADVANCED MediaPipe-based algorithm"""
     global tracking_active, tracker_thread, tracker
-    
+
     if not tracking_active:
         try:
             # Use YOUR ADVANCED Attention Tracker class
             tracker = AdvancedAttentionTracker(camera_index=0, frame_width=640, frame_height=480)
             print("✅ YOUR ADVANCED Attention Tracker algorithm initialized")
-            
+
             tracking_active = True
             tracker_thread = threading.Thread(target=run_your_advanced_algorithm)
             tracker_thread.daemon = True
             tracker_thread.start()
-            
+
             return jsonify({
                 'success': True,
-                'message': 'YOUR ADVANCED dlib-based algorithm started',
+                'message': 'YOUR ADVANCED MediaPipe-based algorithm started',
                 'algorithm_features': [
-                    'dlib 68-point Facial Landmarks',
-                    'Advanced Gaze Analysis', 
-                    'Eye/Mouth Detection',
-                    'Phone Detection',
-                    'Head Pose Estimation',
-                    'Hand Detection',
+                    'MediaPipe Face Mesh (478 landmarks)',
+                    'MediaPipe Hands Detection',
+                    'MediaPipe Pose Detection',
+                    'Advanced Eye Aspect Ratio (EAR)',
+                    'Mouth Aspect Ratio (MAR) for Yawning',
+                    'Head Pose Estimation (Yaw/Pitch/Roll)',
+                    'Flexible Phone Detection',
+                    'Hand Near Face Detection',
                     'Posture Analysis',
-                    'Enhanced Focus Logic'
+                    'Enhanced Focus Scoring'
                 ],
                 'camera_params': {
                     'width': tracker.frame_width,
@@ -149,17 +156,19 @@ def start_tracking():
                 },
                 'timestamp': time.time()
             })
-            
+
         except Exception as e:
             print(f"❌ Failed to initialize YOUR ADVANCED algorithm: {e}")
+            import traceback
+            traceback.print_exc()
             return jsonify({
                 'success': False,
                 'message': f'Failed to initialize algorithm: {str(e)}',
                 'timestamp': time.time()
-            })
+            }), 500
     else:
         return jsonify({
-            'success': False,
+            'success': True,
             'message': 'Tracking already active',
             'timestamp': time.time()
         })
@@ -168,9 +177,9 @@ def start_tracking():
 def stop_tracking():
     """Stop tracking using YOUR algorithm cleanup"""
     global tracking_active, tracker
-    
+
     tracking_active = False
-    
+
     # Use YOUR algorithm cleanup
     if tracker:
         try:
@@ -179,7 +188,7 @@ def stop_tracking():
             print("✅ YOUR ADVANCED Attention Tracker stopped")
         except Exception as e:
             print(f"Error stopping YOUR algorithm: {e}")
-    
+
     return jsonify({
         'success': True,
         'message': 'YOUR ADVANCED Attention Tracker stopped',
@@ -206,23 +215,31 @@ def ping():
     })
 
 if __name__ == '__main__':
-    print("Starting HTTP API server using YOUR ADVANCED dlib-based Attention Tracker")
-    print("Using YOUR dlib 68-point landmarks + MediaPipe + Enhanced Focus Logic!")
-    print("\nYOUR ADVANCED Algorithm Features:")
-    print("  ✅ dlib 68-point Facial Landmarks")
-    print("  ✅ Advanced Gaze Analysis")
-    print("  ✅ Eye/Mouth Detection")
-    print("  ✅ Phone Detection")
-    print("  ✅ Head Pose Estimation")
-    print("  ✅ Hand Detection")
+    print("=" * 70)
+    print("🧠 STUDY SPARK AI ATTENTION TRACKING SERVER")
+    print("=" * 70)
+    print("Starting HTTP API server using YOUR ADVANCED MediaPipe-based Tracker")
+    print("")
+    print("🎯 YOUR ADVANCED Algorithm Features:")
+    print("  ✅ MediaPipe Face Mesh (478 landmarks)")
+    print("  ✅ MediaPipe Hands Detection")
+    print("  ✅ MediaPipe Pose Detection")
+    print("  ✅ Advanced Eye Aspect Ratio (EAR)")
+    print("  ✅ Mouth Aspect Ratio (MAR) for Yawning")
+    print("  ✅ Head Pose Estimation (Yaw/Pitch/Roll)")
+    print("  ✅ Flexible Phone Detection")
+    print("  ✅ Hand Near Face Detection")
     print("  ✅ Posture Analysis")
-    print("\nAPI endpoints:")
-    print("  GET  /api/status - Server status")
-    print("  POST /api/start_tracking - Start YOUR ADVANCED algorithm")
-    print("  POST /api/stop_tracking - Stop YOUR algorithm")
-    print("  GET  /api/attention_data - Get algorithm data")
-    print("  GET  /api/ping - Ping endpoint")
-    print("\nPress Ctrl+C to stop")
-    
-    app.run(host='localhost', port=8765, debug=False)
+    print("  ✅ Enhanced Focus Scoring")
+    print("")
+    print("📡 API endpoints on http://localhost:8765:")
+    print("  GET  /api/ping              - Health check")
+    print("  GET  /api/status            - Server status")
+    print("  POST /api/start_tracking    - Start YOUR ADVANCED algorithm")
+    print("  POST /api/stop_tracking     - Stop YOUR algorithm")
+    print("  GET  /api/attention_data    - Get algorithm data")
+    print("")
+    print("🛑 Press Ctrl+C to stop")
+    print("=" * 70)
 
+    app.run(host='localhost', port=8765, debug=False)
