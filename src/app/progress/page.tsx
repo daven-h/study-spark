@@ -147,7 +147,7 @@ export default function ProgressPage() {
                     </div>
                     <div>
                       <h4 className="font-norwester text-[#3f403f]">
-                        {session.title}
+                        {session.task}
                       </h4>
                       <p className="text-sm font-norwester text-[#575b44] capitalize">
                         {session.method.replace('-', ' ')} • {formatDate(new Date(session.dateISO).getTime())}
