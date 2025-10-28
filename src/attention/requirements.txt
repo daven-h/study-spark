@@ -5,5 +5,9 @@ websockets
 ultralytics
 torch
 torchvision
-flask
-flask-cors
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
+imutils
+scipy

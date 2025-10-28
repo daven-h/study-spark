@@ -1,0 +1,18 @@
+# AI Helper VLM Dependencies
+# Install these for the AI helper to work
+
+# For Ollama backend (recommended)
+ollama
+
+# For Hugging Face backend (alternative)
+transformers
+torch
+torchvision
+pillow
+
+# For image processing
+opencv-python
+numpy
+
+# For async processing
+asyncio
