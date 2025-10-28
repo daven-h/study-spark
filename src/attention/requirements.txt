@@ -5,3 +5,9 @@ websockets
 ultralytics
 torch
 torchvision
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
+imutils
+scipy

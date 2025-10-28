@@ -40,8 +40,8 @@ class PreciseAttentionTracker:
     Precise Attention Tracker using exact EAR and MAR math from dlib
     """
     
-    def __init__(self, camera_index: int = 0, frame_width: int = 640, 
-                 frame_height: int = 480):
+    def __init__(self, camera_index: int = 0, frame_width: int = 1280, 
+                 frame_height: int = 720):
         self.camera_index = camera_index
         self.frame_width = frame_width
         self.frame_height = frame_height

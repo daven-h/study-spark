@@ -15,9 +15,8 @@ from scipy.spatial import distance as dist
 import imutils
 from imutils import face_utils
 from imutils.video import VideoStream
-import dlib
 
-from flexible_phone_detector import FlexiblePhoneDetector
+from yolo11_phone_detector import YOLOv11PhoneDetector
 
 class FPSCounter:
     """Optimized FPS counter"""
@@ -55,13 +54,17 @@ class AdvancedAttentionTracker:
             raise IOError("Cannot open webcam")
         
         # Initialize dlib face detector and predictor
-        self.detector = dlib.get_frontal_face_detector()
+        self.detector = None
+        self.predictor = None
         try:
+            import dlib
+            self.detector = dlib.get_frontal_face_detector()
             self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
             print("✅ dlib predictor loaded")
+        except ImportError:
+            print("⚠️ dlib not available, using MediaPipe only")
         except:
             print("⚠️ dlib predictor not found, using MediaPipe fallback")
-            self.predictor = None
         
         # Initialize MediaPipe as fallback
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -91,8 +94,8 @@ class AdvancedAttentionTracker:
             min_tracking_confidence=0.5
         )
         
-        # Initialize flexible phone detector
-        self.phone_detector = FlexiblePhoneDetector()
+        # Initialize Jason's YOLOv11 phone detector
+        self.phone_detector = YOLOv11PhoneDetector()
         
         # Performance optimization
         self.fps_counter = FPSCounter()
@@ -123,7 +126,7 @@ class AdvancedAttentionTracker:
         self.eye_closure_counter = 0
         
         print(f"✅ Advanced Attention Tracker initialized: {self.frame_width}x{self.frame_height}")
-        print("📱 dlib 68-point landmarks + Flexible Phone Detection")
+        print("📱 YOLOv11 Phone Detection + dlib 68-point landmarks")
         print("🎯 Advanced Gaze, Eye, and Mouth Analysis")
 
     def initialize_camera(self) -> bool:
@@ -226,15 +229,15 @@ class AdvancedAttentionTracker:
             return 0.0, 0.0, 0.0
 
     def run_phone_detection_async(self, frame, face_bbox):
-        """Run phone detection in background thread"""
+        """Run YOLOv11 phone detection in background thread"""
         try:
             detections = self.phone_detector.detect_phones_near_face(frame, face_bbox)
             with self.detection_results_lock:
                 self.last_phone_results = detections
                 if detections:
-                    print(f"DEBUG: Found {len(detections)} phone objects!")
+                    print(f"DEBUG: Found {len(detections)} phone objects using YOLOv11!")
         except Exception as e:
-            print(f"Phone detection error: {e}")
+            print(f"YOLOv11 phone detection error: {e}")
 
     def is_hand_near_face(self, face_bbox, hands, margin=0.2):
         """Check if hand landmarks are near face area"""
@@ -312,7 +315,7 @@ class AdvancedAttentionTracker:
         orientation_good = True
         
         # Try dlib first (more accurate)
-        if self.predictor is not None:
+        if self.predictor is not None and self.detector is not None:
             rects = self.detector(gray, 0)
             
             if len(rects) > 0:
@@ -408,10 +411,8 @@ class AdvancedAttentionTracker:
         if face_bbox and phone_objects:
             phone_near_face, phone_confidence = self.is_phone_near_face(face_bbox, phone_objects)
         
-        # Enhanced phone detection
-        if hand_near_face and phone_objects:
-            phone_near_face = True
-            phone_confidence = max(phone_confidence, max(obj.get('confidence', 0.0) for obj in phone_objects))
+        # Separate phone detection and hand detection
+        # Don't combine them - they are separate entities
         
         # Posture analysis
         pose_results = self.pose.process(rgb_frame)
@@ -424,25 +425,25 @@ class AdvancedAttentionTracker:
             except (IndexError, AttributeError):
                 posture_stable = True
         
-        # Calculate focus score
+        # Calculate focus score - separate phone and hand detection
         focus_components = {
             "face_visibility": 1.0 if face_visible else 0.0,
             "orientation": 1.0 if orientation_good else 0.0,
             "eye_open": 0.0 if eye_closed else 1.0,
             "not_yawning": 0.0 if yawning else 1.0,
-            "phone_interaction": 0.0 if phone_near_face else 1.0,
-            "hand_interaction": 0.7 if hand_near_face else 1.0,
+            "no_phone_detected": 0.0 if phone_near_face else 1.0,  # Separate phone detection
+            "no_hand_near_face": 0.0 if hand_near_face else 1.0,   # Separate hand detection
             "posture": 1.0 if posture_stable else 0.0
         }
         
-        # Weighted focus score
+        # Weighted focus score - separate weights for phone and hand
         weights = {
             "face_visibility": 0.2,
             "orientation": 0.2,
             "eye_open": 0.2,
             "not_yawning": 0.1,
-            "phone_interaction": 0.15,
-            "hand_interaction": 0.05,
+            "no_phone_detected": 0.15,    # Phone detection weight
+            "no_hand_near_face": 0.05,    # Hand detection weight (lower priority)
             "posture": 0.1
         }
         
@@ -452,7 +453,7 @@ class AdvancedAttentionTracker:
         focused = (focus_score > 0.7 and not phone_near_face and face_visible and 
                   orientation_good and not eye_closed and not yawning)
         
-        # Generate status messages
+        # Generate status messages - separate phone and hand detection
         status_messages = self.generate_status_messages(
             face_visible, orientation_good, phone_near_face, hand_near_face,
             phone_confidence, posture_stable, eye_closed, yawning, yaw, pitch, head_tilt
@@ -526,16 +527,21 @@ class AdvancedAttentionTracker:
             mouth_status = "😐 Normal"
             mouth_color = "green"
         
-        # Interaction status
+        # Phone detection status (separate from hand)
         if phone_near_face:
-            interaction_status = f"📱 Phone detected ({phone_confidence:.2f})"
-            interaction_color = "red"
-        elif hand_near_face:
-            interaction_status = "✋ Hand near face"
-            interaction_color = "yellow"
+            phone_status = f"📱 Phone detected ({phone_confidence:.2f})"
+            phone_color = "red"
         else:
-            interaction_status = "✓ No phone or hand near face"
-            interaction_color = "green"
+            phone_status = "✓ No phone detected"
+            phone_color = "green"
+        
+        # Hand detection status (separate from phone)
+        if hand_near_face:
+            hand_status = "✋ Hand near face"
+            hand_color = "yellow"
+        else:
+            hand_status = "✓ No hand near face"
+            hand_color = "green"
         
         # Posture status
         if posture_stable:
@@ -576,7 +582,8 @@ class AdvancedAttentionTracker:
             "orientation": {"text": orientation_status, "color": orientation_color},
             "eye": {"text": eye_status, "color": eye_color},
             "mouth": {"text": mouth_status, "color": mouth_color},
-            "interaction": {"text": interaction_status, "color": interaction_color},
+            "phone": {"text": phone_status, "color": phone_color},      # Separate phone detection
+            "hand": {"text": hand_status, "color": hand_color},          # Separate hand detection
             "posture": {"text": posture_status, "color": posture_color},
             "overall": {"text": overall_status, "color": overall_color}
         }
@@ -610,7 +617,8 @@ class AdvancedAttentionTracker:
             ("ORIENTATION", status_messages.get("orientation", {}).get("text", "Looking forward")),
             ("EYE", status_messages.get("eye", {}).get("text", "Eyes open")),
             ("MOUTH", status_messages.get("mouth", {}).get("text", "Normal")),
-            ("INTERACTION", status_messages.get("interaction", {}).get("text", "No interaction")),
+            ("PHONE", status_messages.get("phone", {}).get("text", "No phone detected")),      # Separate phone detection
+            ("HAND", status_messages.get("hand", {}).get("text", "No hand near face")),          # Separate hand detection
             ("POSTURE", status_messages.get("posture", {}).get("text", "Good posture")),
             ("OVERALL", status_messages.get("overall", {}).get("text", "Focused"))
         ]
@@ -675,7 +683,7 @@ class AdvancedAttentionTracker:
     def run(self):
         """Run the main attention tracking loop"""
         print("🚀 Starting Advanced Attention Tracker...")
-        print("📱 dlib 68-point landmarks + Flexible Phone Detection")
+        print("📱 YOLOv11 Phone Detection + dlib 68-point landmarks")
         print("🎯 Advanced Gaze, Eye, and Mouth Analysis")
         print("Press 'q' to quit, 's' to save screenshot")
         

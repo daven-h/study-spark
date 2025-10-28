@@ -92,8 +92,8 @@ class StudySessionBackend:
             "is_active": True
         })
         
-        # Start attention tracker
-        self.attention_tracker = PreciseAttentionTracker()
+        # Start attention tracker with 1280x720 resolution
+        self.attention_tracker = PreciseAttentionTracker(frame_width=1280, frame_height=720)
         
         # Start session timer
         self._start_session_timer()
